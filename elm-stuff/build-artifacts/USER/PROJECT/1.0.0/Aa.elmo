@@ -11,12 +11,32 @@ Elm.Aa.make = function (_elm) {
    $moduleName = "Aa",
    $Basics = Elm.Basics.make(_elm),
    $Graphics$Element = Elm.Graphics.Element.make(_elm),
+   $Keyboard = Elm.Keyboard.make(_elm),
    $List = Elm.List.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
    $Result = Elm.Result.make(_elm),
-   $Signal = Elm.Signal.make(_elm);
-   var main = $Graphics$Element.show("Hello World");
+   $Signal = Elm.Signal.make(_elm),
+   $Time = Elm.Time.make(_elm);
+   var delta = A2($Signal._op["<~"],
+   $Time.inSeconds,
+   $Time.fps(60));
+   var Input = F2(function (a,b) {
+      return {_: {}
+             ,delta: b
+             ,space: a};
+   });
+   var input = $Signal.sampleOn(delta)(A2($Signal._op["~"],
+   A2($Signal._op["<~"],
+   Input,
+   $Keyboard.space),
+   delta));
+   var main = A2($Signal._op["<~"],
+   $Graphics$Element.show,
+   input);
    _elm.Aa.values = {_op: _op
+                    ,Input: Input
+                    ,delta: delta
+                    ,input: input
                     ,main: main};
    return _elm.Aa.values;
 };
