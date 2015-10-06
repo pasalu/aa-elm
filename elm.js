@@ -18,6 +18,45 @@ Elm.Aa.make = function (_elm) {
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm),
    $Time = Elm.Time.make(_elm);
+   var Game = F3(function (a,b,c) {
+      return {_: {}
+             ,board: b
+             ,player: c
+             ,state: a};
+   });
+   var Pause = {ctor: "Pause"};
+   var Play = {ctor: "Play"};
+   var Right = {ctor: "Right"};
+   var Left = {ctor: "Left"};
+   var defaultGame = {_: {}
+                     ,board: {_: {}
+                             ,direction: Left
+                             ,numberOfDarts: 0
+                             ,vx: 1
+                             ,vy: 1
+                             ,x: 0
+                             ,y: 0}
+                     ,player: {_: {}
+                              ,darts: _L.fromArray([])
+                              ,vx: 0
+                              ,vy: 0
+                              ,x: 0
+                              ,y: 10}
+                     ,state: Pause};
+   var main = $Graphics$Element.show(defaultGame);
+   var Object = F5(function (a,
+   b,
+   c,
+   d,
+   e) {
+      return _U.insert("vy",
+      d,
+      _U.insert("vx",
+      c,
+      _U.insert("y",
+      b,
+      _U.insert("x",a,e))));
+   });
    var delta = A2($Signal._op["<~"],
    $Time.inSeconds,
    $Time.fps(60));
@@ -31,13 +70,17 @@ Elm.Aa.make = function (_elm) {
    Input,
    $Keyboard.space),
    delta));
-   var main = A2($Signal._op["<~"],
-   $Graphics$Element.show,
-   input);
    _elm.Aa.values = {_op: _op
                     ,Input: Input
                     ,delta: delta
                     ,input: input
+                    ,Object: Object
+                    ,Left: Left
+                    ,Right: Right
+                    ,Play: Play
+                    ,Pause: Pause
+                    ,Game: Game
+                    ,defaultGame: defaultGame
                     ,main: main};
    return _elm.Aa.values;
 };
