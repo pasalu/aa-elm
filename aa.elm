@@ -11,6 +11,7 @@ import Graphics.Element exposing (show)
 import Signal exposing ((<~), (~))
 import Time exposing (Time, fps, inSeconds)
 import Keyboard
+import List exposing (map)
 
 --Inputs to the game.
 type alias Input =
@@ -67,5 +68,38 @@ defaultGame =
   , player = { x = 0, y = 10, vx = 0, vy = 0, darts = [] }
   }
 
+--Update the game.
+collidedWithBoard : Dart -> Board -> Bool
+collidedWithBoard dart board =
+  board.y == dart.y
+
+stepObject : Time -> Object a -> Object a
+stepObject time ({x, y, vx, vy} as object) =
+  { object |
+      x <- x + vx * time,
+      y <- y + vy * time
+  }
+
+stepDart : Time -> Dart -> Board -> Dart
+stepDart time ({x, y, vx, vy} as dart) board =
+  let dart' = stepObject time {dart | vy <- 20}
+      y = collidedWithBoard dart board
+  in
+     dart'
+
+stepGame : Input -> Game -> Game
+stepGame input game =
+  let
+    {space, delta} = input
+    {state, board, player} = game
+
+    state' = if space then Play else Pause
+    darts' = List.map (\dart -> stepDart delta dart board) player.darts
+    player' = {player | darts <- darts'}
+  in
+     {game | state <- state', player <- player'}
+
+gameState : Signal Game
+gameState = Signal.foldp stepGame defaultGame input
 
 main = show defaultGame

@@ -18,6 +18,34 @@ Elm.Aa.make = function (_elm) {
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm),
    $Time = Elm.Time.make(_elm);
+   var stepObject = F2(function (time,
+   _v0) {
+      return function () {
+         return _U.replace([["x"
+                            ,_v0.x + _v0.vx * time]
+                           ,["y",_v0.y + _v0.vy * time]],
+         _v0);
+      }();
+   });
+   var collidedWithBoard = F2(function (dart,
+   board) {
+      return _U.eq(board.y,dart.y);
+   });
+   var stepDart = F3(function (time,
+   _v2,
+   board) {
+      return function () {
+         return function () {
+            var y = A2(collidedWithBoard,
+            _v2,
+            board);
+            var dart$ = A2(stepObject,
+            time,
+            _U.replace([["vy",20]],_v2));
+            return dart$;
+         }();
+      }();
+   });
    var Game = F3(function (a,b,c) {
       return {_: {}
              ,board: b
@@ -26,6 +54,34 @@ Elm.Aa.make = function (_elm) {
    });
    var Pause = {ctor: "Pause"};
    var Play = {ctor: "Play"};
+   var stepGame = F2(function (input,
+   game) {
+      return function () {
+         var $ = game,
+         state = $.state,
+         board = $.board,
+         player = $.player;
+         var $ = input,
+         space = $.space,
+         delta = $.delta;
+         var state$ = space ? Play : Pause;
+         var darts$ = A2($List.map,
+         function (dart) {
+            return A3(stepDart,
+            delta,
+            dart,
+            board);
+         },
+         player.darts);
+         var player$ = _U.replace([["darts"
+                                   ,darts$]],
+         player);
+         return _U.replace([["state"
+                            ,state$]
+                           ,["player",player$]],
+         game);
+      }();
+   });
    var Right = {ctor: "Right"};
    var Left = {ctor: "Left"};
    var defaultGame = {_: {}
@@ -70,6 +126,10 @@ Elm.Aa.make = function (_elm) {
    Input,
    $Keyboard.space),
    delta));
+   var gameState = A3($Signal.foldp,
+   stepGame,
+   defaultGame,
+   input);
    _elm.Aa.values = {_op: _op
                     ,Input: Input
                     ,delta: delta
@@ -81,6 +141,11 @@ Elm.Aa.make = function (_elm) {
                     ,Pause: Pause
                     ,Game: Game
                     ,defaultGame: defaultGame
+                    ,collidedWithBoard: collidedWithBoard
+                    ,stepObject: stepObject
+                    ,stepDart: stepDart
+                    ,stepGame: stepGame
+                    ,gameState: gameState
                     ,main: main};
    return _elm.Aa.values;
 };
