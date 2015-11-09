@@ -12,7 +12,6 @@ Elm.Aa.make = function (_elm) {
    $moduleName = "Aa",
    $Basics = Elm.Basics.make(_elm),
    $Color = Elm.Color.make(_elm),
-   $Debug = Elm.Debug.make(_elm),
    $Graphics$Collage = Elm.Graphics.Collage.make(_elm),
    $Graphics$Element = Elm.Graphics.Element.make(_elm),
    $Keyboard = Elm.Keyboard.make(_elm),
@@ -72,7 +71,7 @@ Elm.Aa.make = function (_elm) {
                  displayDart,
                  _v1.player.darts))));}
             _U.badCase($moduleName,
-            "between lines 154 and 159");
+            "between lines 171 and 176");
          }();
       }();
    });
@@ -97,7 +96,7 @@ Elm.Aa.make = function (_elm) {
          return function () {
             var dart$ = A2(stepObject,
             time,
-            _U.replace([["vy",400]],_v8));
+            _U.replace([["vy",500]],_v8));
             var y$ = A2(collidedWithBoard,
             _v8,
             board) ? _v8.y : dart$.y;
@@ -114,6 +113,51 @@ Elm.Aa.make = function (_elm) {
                      ,width: 1
                      ,x: 0
                      ,y: -300};
+   var defaultPlayer = {_: {}
+                       ,darts: _L.fromArray([defaultDart])
+                       ,isShooting: false
+                       ,vx: 0
+                       ,vy: 0
+                       ,x: 0
+                       ,y: 0};
+   var anyCollidedWithBoardOrInFlight = F2(function (darts,
+   board) {
+      return function () {
+         var check = function (dart) {
+            return A2(collidedWithBoard,
+            dart,
+            board) || _U.cmp(dart.y,
+            defaultDart.y) > 0;
+         };
+         var collided = $List.any(function (collidedStatus) {
+            return _U.eq(collidedStatus,
+            true);
+         })(A2($List.map,check,darts));
+         return collided;
+      }();
+   });
+   var stepPlayer = F4(function (delta,
+   board,
+   isShooting,
+   player) {
+      return function () {
+         var darts$ = isShooting || player.isShooting ? A2($List.map,
+         function (dart) {
+            return A3(stepDart,
+            delta,
+            dart,
+            board);
+         },
+         player.darts) : player.darts;
+         var isShooting$ = isShooting || A2(anyCollidedWithBoardOrInFlight,
+         darts$,
+         board);
+         return _U.replace([["darts"
+                            ,darts$]
+                           ,["isShooting",isShooting$]],
+         player);
+      }();
+   });
    var Game = F3(function (a,b,c) {
       return {_: {}
              ,board: b
@@ -129,32 +173,16 @@ Elm.Aa.make = function (_elm) {
          state = $.state,
          board = $.board,
          player = $.player;
-         var b = A2($Debug.watch,
-         "Board",
-         board);
          var $ = input,
          space = $.space,
+         enter = $.enter,
          delta = $.delta;
-         var state$ = space ? _U.eq(state,
-         Play) ? Pause : Play : state;
-         var s = A2($Debug.watch,
-         "State",
-         state$);
-         var darts$ = _U.eq(state,
-         Play) ? A2($List.map,
-         function (dart) {
-            return A3(stepDart,
-            delta,
-            dart,
-            board);
-         },
-         player.darts) : player.darts;
-         var player$ = _U.replace([["darts"
-                                   ,darts$]],
+         var state$ = enter ? Play : state;
+         var player$ = A4(stepPlayer,
+         delta,
+         board,
+         space,
          player);
-         var d = A2($Debug.watch,
-         "Darts",
-         darts$);
          return _U.replace([["state"
                             ,state$]
                            ,["player",player$]],
@@ -172,12 +200,7 @@ Elm.Aa.make = function (_elm) {
                              ,vy: 0
                              ,x: 0
                              ,y: 130}
-                     ,player: {_: {}
-                              ,darts: _L.fromArray([defaultDart])
-                              ,vx: 0
-                              ,vy: 0
-                              ,x: 0
-                              ,y: 0}
+                     ,player: defaultPlayer
                      ,state: Pause};
    var Object = F5(function (a,
    b,
@@ -195,15 +218,20 @@ Elm.Aa.make = function (_elm) {
    var delta = A2($Signal._op["<~"],
    $Time.inSeconds,
    $Time.fps(60));
-   var Input = F2(function (a,b) {
+   var Input = F3(function (a,
+   b,
+   c) {
       return {_: {}
-             ,delta: b
+             ,delta: c
+             ,enter: b
              ,space: a};
    });
    var input = $Signal.sampleOn(delta)(A2($Signal._op["~"],
+   A2($Signal._op["~"],
    A2($Signal._op["<~"],
    Input,
    $Keyboard.space),
+   $Keyboard.enter),
    delta));
    var gameState = A3($Signal.foldp,
    stepGame,
@@ -225,9 +253,12 @@ Elm.Aa.make = function (_elm) {
                     ,Pause: Pause
                     ,Game: Game
                     ,defaultDart: defaultDart
+                    ,defaultPlayer: defaultPlayer
                     ,defaultGame: defaultGame
                     ,stepObject: stepObject
                     ,collidedWithBoard: collidedWithBoard
+                    ,stepPlayer: stepPlayer
+                    ,anyCollidedWithBoardOrInFlight: anyCollidedWithBoardOrInFlight
                     ,stepDart: stepDart
                     ,stepGame: stepGame
                     ,gameState: gameState

@@ -21,6 +21,7 @@ import Debug
 --Inputs to the game.
 type alias Input =
   { space : Bool
+  , enter : Bool
   , delta : Time
   }
 
@@ -29,8 +30,8 @@ delta = inSeconds <~ (fps 60)
 
 input : Signal Input
 input =
-  Signal.sampleOn delta <|
-    Input <~ Keyboard.space ~ delta
+  Signal.sampleOn delta
+    <| Input <~ Keyboard.space ~ Keyboard.enter ~ delta
 
 --Models of the game.
 type alias Object a =
@@ -50,7 +51,7 @@ type alias Dart =
   Object { height : Float, width : Float, radius : Float }
 
 type alias Player =
-  Object { darts : List Dart }
+  Object { darts : List Dart, isShooting : Bool }
 
 type State = Play | Pause
 
@@ -71,6 +72,10 @@ defaultDart =
   , radius = 5
   }
 
+defaultPlayer : Player
+defaultPlayer =
+  { x = 0, y = 0, vx = 0, vy = 0, darts = [defaultDart], isShooting = False }
+
 defaultGame : Game
 defaultGame =
   { state = Pause
@@ -82,7 +87,7 @@ defaultGame =
               numberOfDarts = 0,
               direction = Left
             }
-  , player = { x = 0, y = 0, vx = 0, vy = 0, darts = [defaultDart] }
+  , player = defaultPlayer
   }
 
 --Update the game.
@@ -97,9 +102,30 @@ collidedWithBoard : Dart -> Board -> Bool
 collidedWithBoard dart board =
   dart.y > (board.y - (board.radius + (dart.height / 2) + dart.radius))
 
+stepPlayer : Time -> Board -> Bool -> Player -> Player
+stepPlayer delta board isShooting player =
+  let
+    darts' =
+      if isShooting || player.isShooting then
+        List.map (\dart -> stepDart delta dart board) player.darts
+      else
+        player.darts
+    isShooting' = isShooting || anyCollidedWithBoardOrInFlight darts' board
+  in
+    { player | darts <- darts', isShooting <- isShooting' }
+
+anyCollidedWithBoardOrInFlight : List Dart -> Board -> Bool
+anyCollidedWithBoardOrInFlight darts board =
+  let check = (\dart -> collidedWithBoard dart board || dart.y > defaultDart.y)
+      collided =
+        List.any (\collidedStatus -> collidedStatus == True)
+          <| List.map check darts
+  in
+     collided
+
 stepDart : Time -> Dart -> Board -> Dart
 stepDart time ({x, y, vx, vy} as dart) board =
-  let dart' = stepObject time {dart | vy <- 400}
+  let dart' = stepObject time {dart | vy <- 500}
       y' = if collidedWithBoard dart board then dart.y else dart'.y
   in
      {dart' | y <- y'}
@@ -107,23 +133,14 @@ stepDart time ({x, y, vx, vy} as dart) board =
 stepGame : Input -> Game -> Game
 stepGame input game =
   let
-    {space, delta} = input
+    {space, enter, delta} = input
     {state, board, player} = game
 
     state' =
-      if | space -> if state == Play then Pause else Play
+      if | enter -> Play
          | otherwise -> state
 
-    darts' =
-      if state == Play
-         then List.map (\dart -> stepDart delta dart board) player.darts
-         else player.darts
-
-    player' = {player | darts <- darts'}
-
-    d = Debug.watch "Darts" darts'
-    b = Debug.watch "Board" board
-    s = Debug.watch "State" state'
+    player' = stepPlayer delta board space player
   in
      {game | state <- state', player <- player'}
 
