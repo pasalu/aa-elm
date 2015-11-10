@@ -8,8 +8,8 @@
 module Aa where
 
 import Graphics.Element exposing (..)
-import Graphics.Collage exposing
-  (Form, Shape, move, moveY, filled, rect, circle, collage, group)
+import Graphics.Collage exposing (..)
+import Text
 import Color exposing (black, white, yellow)
 import Signal exposing ((<~), (~))
 import Time exposing (Time, fps, inSeconds)
@@ -84,7 +84,7 @@ defaultGame =
               vx = 0,
               vy = 0,
               radius = 100,
-              numberOfDarts = 0,
+              numberOfDarts = 10,
               direction = Left
             }
   , player = defaultPlayer
@@ -100,17 +100,19 @@ stepObject time ({x, y, vx, vy} as object) =
 
 collidedWithBoard : Dart -> Board -> Bool
 collidedWithBoard dart board =
+  let d = Debug.watch "Dart" dart
+      b = Debug.watch "Board" board
+  in
   dart.y > (board.y - (board.radius + (dart.height / 2) + dart.radius))
 
 stepPlayer : Time -> Board -> Bool -> Player -> Player
 stepPlayer delta board isShooting player =
-  let
-    darts' =
-      if isShooting || player.isShooting then
-        List.map (\dart -> stepDart delta dart board) player.darts
-      else
-        player.darts
-    isShooting' = isShooting || anyCollidedWithBoardOrInFlight darts' board
+  let darts' =
+        if isShooting || player.isShooting then
+          List.map (\dart -> stepDart delta dart board) player.darts
+        else
+          player.darts
+      isShooting' = isShooting || anyCollidedWithBoardOrInFlight darts' board
   in
     { player | darts <- darts', isShooting <- isShooting' }
 
@@ -118,7 +120,7 @@ anyCollidedWithBoardOrInFlight : List Dart -> Board -> Bool
 anyCollidedWithBoardOrInFlight darts board =
   let check = (\dart -> collidedWithBoard dart board || dart.y > defaultDart.y)
       collided =
-        List.any (\collidedStatus -> collidedStatus == True)
+        List.any (\status -> status == True)
           <| List.map check darts
   in
      collided
@@ -154,13 +156,22 @@ displayBackground width height =
 
 displayBoard : Board -> Form
 displayBoard board =
-  move (board.x, board.y) (filled black (circle board.radius))
+  move
+    (board.x, board.y)
+    <| group [ (filled black <| circle board.radius)
+             , (text
+                  <| Text.height 40
+                  <| Text.color white
+                  <| Text.fromString
+                  <| toString board.numberOfDarts
+                )
+             ]
 
 drawDart : Dart -> Form
 drawDart dart =
     group
-      [ (moveY -(dart.height / 2) <| filled white <| circle dart.radius)
-      , (filled white <| rect dart.width dart.height)
+      [ (moveY -(dart.height / 2) <| filled black <| circle dart.radius)
+      , (filled black <| rect dart.width dart.height)
       ]
 
 displayDart : Dart -> Form
