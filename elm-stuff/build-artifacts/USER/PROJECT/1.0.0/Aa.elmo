@@ -11,7 +11,6 @@ Elm.Aa.make = function (_elm) {
    $moduleName = "Aa",
    $Basics = Elm.Basics.make(_elm),
    $Color = Elm.Color.make(_elm),
-   $Debug = Elm.Debug.make(_elm),
    $Graphics$Collage = Elm.Graphics.Collage.make(_elm),
    $Graphics$Element = Elm.Graphics.Element.make(_elm),
    $Keyboard = Elm.Keyboard.make(_elm),
@@ -28,23 +27,31 @@ Elm.Aa.make = function (_elm) {
                                                   dart.width,
                                                   dart.height))]));
    };
-   var displayDart = function (dart) {
-      return A2($Graphics$Collage.move,
-      {ctor: "_Tuple2"
-      ,_0: dart.x
-      ,_1: dart.y},
-      drawDart(dart));
-   };
+   var displayObject = F4(function (x,
+   y,
+   angle,
+   form) {
+      return $Graphics$Collage.rotate(angle)($Graphics$Collage.move({ctor: "_Tuple2"
+                                                                    ,_0: x
+                                                                    ,_1: y})(form));
+   });
    var displayBoard = function (board) {
-      return $Graphics$Collage.move({ctor: "_Tuple2"
-                                    ,_0: board.x
-                                    ,_1: board.y})($Graphics$Collage.group(_L.fromArray([$Graphics$Collage.filled($Color.black)($Graphics$Collage.circle(board.radius))
-                                                                                        ,$Graphics$Collage.text($Text.height(40)($Text.color($Color.white)($Text.fromString($Basics.toString(board.numberOfDarts)))))])));
+      return A3(displayObject,
+      board.x,
+      board.y,
+      board.angle)($Graphics$Collage.group(_L.fromArray([$Graphics$Collage.filled($Color.black)($Graphics$Collage.circle(board.radius))
+                                                        ,$Graphics$Collage.text($Text.height(40)($Text.color($Color.white)($Text.fromString($Basics.toString(board.numberOfDarts)))))])));
+   };
+   var displayDart = function (dart) {
+      return A3(displayObject,
+      dart.x,
+      dart.y,
+      dart.angle)(drawDart(dart));
    };
    var displayBackground = F2(function (width,
    height) {
       return A2($Graphics$Collage.filled,
-      $Color.yellow,
+      $Color.white,
       A2($Graphics$Collage.rect,
       $Basics.toFloat(width),
       $Basics.toFloat(height)));
@@ -69,49 +76,50 @@ Elm.Aa.make = function (_elm) {
                  displayDart,
                  _v1.player.darts))));}
             _U.badCase($moduleName,
-            "between lines 182 and 187");
+            "between lines 233 and 238");
          }();
       }();
    });
    var collidedWithBoard = F2(function (dart,
    board) {
-      return function () {
-         var b = A2($Debug.watch,
-         "Board",
-         board);
-         var d = A2($Debug.watch,
-         "Dart",
-         dart);
-         return _U.cmp(dart.y,
-         board.y - (board.radius + dart.height / 2 + dart.radius)) > 0;
-      }();
+      return _U.cmp(dart.y,
+      board.y - (board.radius + dart.height / 2 + dart.radius)) > 0;
    });
-   var stepObject = F2(function (time,
-   _v6) {
-      return function () {
-         return _U.replace([["x"
-                            ,_v6.x + _v6.vx * time]
-                           ,["y",_v6.y + _v6.vy * time]],
-         _v6);
-      }();
+   var Game = F3(function (a,b,c) {
+      return {_: {}
+             ,board: b
+             ,player: c
+             ,state: a};
    });
-   var stepDart = F3(function (time,
-   _v8,
-   board) {
-      return function () {
-         return function () {
-            var dart$ = A2(stepObject,
-            time,
-            _U.replace([["vy",500]],_v8));
-            var y$ = A2(collidedWithBoard,
-            _v8,
-            board) ? _v8.y : dart$.y;
-            return _U.replace([["y",y$]],
-            dart$);
-         }();
-      }();
+   var Pause = {ctor: "Pause"};
+   var Play = {ctor: "Play"};
+   var Object = F8(function (a,
+   b,
+   c,
+   d,
+   e,
+   f,
+   g,
+   h) {
+      return _U.insert("direction",
+      g,
+      _U.insert("angularVelocity",
+      f,
+      _U.insert("angle",
+      e,
+      _U.insert("vy",
+      d,
+      _U.insert("vx",
+      c,
+      _U.insert("y",
+      b,
+      _U.insert("x",a,h)))))));
    });
+   var Right = {ctor: "Right"};
    var defaultDart = {_: {}
+                     ,angle: 0
+                     ,angularVelocity: 0
+                     ,direction: Right
                      ,height: 70
                      ,radius: 5
                      ,vx: 0
@@ -119,13 +127,6 @@ Elm.Aa.make = function (_elm) {
                      ,width: 1
                      ,x: 0
                      ,y: -300};
-   var defaultPlayer = {_: {}
-                       ,darts: _L.fromArray([defaultDart])
-                       ,isShooting: false
-                       ,vx: 0
-                       ,vy: 0
-                       ,x: 0
-                       ,y: 0};
    var anyCollidedWithBoardOrInFlight = F2(function (darts,
    board) {
       return function () {
@@ -139,6 +140,70 @@ Elm.Aa.make = function (_elm) {
             return _U.eq(status,true);
          })(A2($List.map,check,darts));
          return collided;
+      }();
+   });
+   var Left = {ctor: "Left"};
+   var defaultBoard = {_: {}
+                      ,angle: 0
+                      ,angularVelocity: 5
+                      ,direction: Left
+                      ,numberOfDarts: 10
+                      ,radius: 100
+                      ,vx: 0
+                      ,vy: 0
+                      ,x: 0
+                      ,y: 130};
+   var defaultPlayer = {_: {}
+                       ,angle: 0
+                       ,angularVelocity: 0
+                       ,darts: A2($List.repeat,
+                       100,
+                       defaultDart)
+                       ,direction: defaultBoard.direction
+                       ,isShooting: false
+                       ,vx: 0
+                       ,vy: 0
+                       ,x: 0
+                       ,y: 0};
+   var defaultGame = {_: {}
+                     ,board: defaultBoard
+                     ,player: defaultPlayer
+                     ,state: Pause};
+   var stepObject = F2(function (delta,
+   _v6) {
+      return function () {
+         return function () {
+            var angle$ = _U.eq(_v6.direction,
+            Left) ? _v6.angle + _v6.angularVelocity * delta : _v6.angle - _v6.angularVelocity * delta;
+            return _U.replace([["x"
+                               ,_v6.x + _v6.vx * delta]
+                              ,["y",_v6.y + _v6.vy * delta]
+                              ,["angle",angle$]],
+            _v6);
+         }();
+      }();
+   });
+   var stepDart = F3(function (delta,
+   _v8,
+   board) {
+      return function () {
+         return function () {
+            var dart$ = A2(stepObject,
+            delta,
+            _U.replace([["vy",500]],_v8));
+            var $ = A2(collidedWithBoard,
+            _v8,
+            board) ? {ctor: "_Tuple2"
+                     ,_0: _v8.y
+                     ,_1: board.angle} : {ctor: "_Tuple2"
+                                         ,_0: dart$.y
+                                         ,_1: dart$.angle},
+            y$ = $._0,
+            angle$ = $._1;
+            return _U.replace([["y",y$]
+                              ,["angle",angle$]],
+            dart$);
+         }();
       }();
    });
    var stepPlayer = F4(function (delta,
@@ -163,14 +228,12 @@ Elm.Aa.make = function (_elm) {
          player);
       }();
    });
-   var Game = F3(function (a,b,c) {
-      return {_: {}
-             ,board: b
-             ,player: c
-             ,state: a};
+   var stepBoard = F2(function (delta,
+   board) {
+      return A2(stepObject,
+      delta,
+      board);
    });
-   var Pause = {ctor: "Pause"};
-   var Play = {ctor: "Play"};
    var stepGame = F2(function (input,
    game) {
       return function () {
@@ -183,42 +246,20 @@ Elm.Aa.make = function (_elm) {
          enter = $.enter,
          delta = $.delta;
          var state$ = enter ? Play : state;
+         var board$ = A2(stepBoard,
+         delta,
+         board);
          var player$ = A4(stepPlayer,
          delta,
-         board,
+         board$,
          space,
          player);
          return _U.replace([["state"
                             ,state$]
-                           ,["player",player$]],
+                           ,["player",player$]
+                           ,["board",board$]],
          game);
       }();
-   });
-   var Right = {ctor: "Right"};
-   var Left = {ctor: "Left"};
-   var defaultGame = {_: {}
-                     ,board: {_: {}
-                             ,direction: Left
-                             ,numberOfDarts: 10
-                             ,radius: 100
-                             ,vx: 0
-                             ,vy: 0
-                             ,x: 0
-                             ,y: 130}
-                     ,player: defaultPlayer
-                     ,state: Pause};
-   var Object = F5(function (a,
-   b,
-   c,
-   d,
-   e) {
-      return _U.insert("vy",
-      d,
-      _U.insert("vx",
-      c,
-      _U.insert("y",
-      b,
-      _U.insert("x",a,e))));
    });
    var delta = A2($Signal._op["<~"],
    $Time.inSeconds,
@@ -251,12 +292,13 @@ Elm.Aa.make = function (_elm) {
                     ,Input: Input
                     ,delta: delta
                     ,input: input
-                    ,Object: Object
                     ,Left: Left
                     ,Right: Right
+                    ,Object: Object
                     ,Play: Play
                     ,Pause: Pause
                     ,Game: Game
+                    ,defaultBoard: defaultBoard
                     ,defaultDart: defaultDart
                     ,defaultPlayer: defaultPlayer
                     ,defaultGame: defaultGame
@@ -265,9 +307,11 @@ Elm.Aa.make = function (_elm) {
                     ,stepPlayer: stepPlayer
                     ,anyCollidedWithBoardOrInFlight: anyCollidedWithBoardOrInFlight
                     ,stepDart: stepDart
+                    ,stepBoard: stepBoard
                     ,stepGame: stepGame
                     ,gameState: gameState
                     ,displayBackground: displayBackground
+                    ,displayObject: displayObject
                     ,displayBoard: displayBoard
                     ,drawDart: drawDart
                     ,displayDart: displayDart

@@ -34,18 +34,21 @@ input =
     <| Input <~ Keyboard.space ~ Keyboard.enter ~ delta
 
 --Models of the game.
+type Direction = Left | Right
+
 type alias Object a =
   { a |
       x : Float
     , y : Float
     , vx : Float
     , vy : Float
+    , angle : Float
+    , angularVelocity : Float
+    , direction : Direction
   }
 
-type Direction = Left | Right
-
 type alias Board =
-  Object { radius : Float, numberOfDarts : Int, direction : Direction }
+  Object { radius : Float, numberOfDarts : Int }
 
 type alias Dart =
   Object { height : Float, width : Float, radius : Float }
@@ -61,12 +64,42 @@ type alias Game =
   , player : Player
   }
 
+{-
+-- Not used because fields can't be updated AND inserted.
+defaultObject : Object
+defaultObject =
+  { x = 0
+  , y = 0
+  , vx = 0
+  , vy = 0
+  , angle = 0
+  , angularVelocity = 0
+  , direction = Right
+  }
+  -}
+
+defaultBoard : Board
+defaultBoard =
+  { x = 0
+  , y = 130
+  , vx = 0
+  , vy = 0
+  , angle = 0
+  , angularVelocity = 5
+  , direction = Left
+  , radius = 100
+  , numberOfDarts = 10
+  }
+
 defaultDart : Dart
 defaultDart =
   { x = 0
   , y = -300
   , vx = 0
   , vy = 0
+  , angle = 0
+  , angularVelocity = 0
+  , direction = Right
   , height = 70
   , width = 1
   , radius = 5
@@ -74,35 +107,40 @@ defaultDart =
 
 defaultPlayer : Player
 defaultPlayer =
-  { x = 0, y = 0, vx = 0, vy = 0, darts = [defaultDart], isShooting = False }
+  { x = 0
+  , y = 0
+  , vx = 0
+  , vy = 0
+  , angle = 0
+  , angularVelocity = 0
+  , direction = defaultBoard.direction
+  , darts = List.repeat 100 defaultDart
+  , isShooting = False
+  }
 
 defaultGame : Game
 defaultGame =
   { state = Pause
-  , board = { x = 0,
-              y = 130,
-              vx = 0,
-              vy = 0,
-              radius = 100,
-              numberOfDarts = 10,
-              direction = Left
-            }
   , player = defaultPlayer
+  , board = defaultBoard
   }
 
 --Update the game.
 stepObject : Time -> Object a -> Object a
-stepObject time ({x, y, vx, vy} as object) =
+stepObject delta ({x, y, vx, vy, angle, angularVelocity, direction} as object) =
+  let angle' = if direction == Left then
+                 angle + angularVelocity * delta
+               else
+                 angle - angularVelocity * delta
+  in
   { object |
-      x <- x + vx * time,
-      y <- y + vy * time
+      x <- x + vx * delta
+    , y <- y + vy * delta
+    , angle <- angle'
   }
 
 collidedWithBoard : Dart -> Board -> Bool
 collidedWithBoard dart board =
-  let d = Debug.watch "Dart" dart
-      b = Debug.watch "Board" board
-  in
   dart.y > (board.y - (board.radius + (dart.height / 2) + dart.radius))
 
 stepPlayer : Time -> Board -> Bool -> Player -> Player
@@ -126,11 +164,18 @@ anyCollidedWithBoardOrInFlight darts board =
      collided
 
 stepDart : Time -> Dart -> Board -> Dart
-stepDart time ({x, y, vx, vy} as dart) board =
-  let dart' = stepObject time {dart | vy <- 500}
-      y' = if collidedWithBoard dart board then dart.y else dart'.y
+stepDart delta ({x, y, vx, vy} as dart) board =
+  let dart' = stepObject delta {dart | vy <- 500}
+      (y', angle') = if collidedWithBoard dart board then
+                       (dart.y, board.angle)
+                     else
+                       (dart'.y, dart'.angle)
   in
-     {dart' | y <- y'}
+     {dart' | y <- y', angle <- angle'}
+
+stepBoard : Time -> Board -> Board
+stepBoard delta board =
+  stepObject delta board
 
 stepGame : Input -> Game -> Game
 stepGame input game =
@@ -142,9 +187,10 @@ stepGame input game =
       if | enter -> Play
          | otherwise -> state
 
-    player' = stepPlayer delta board space player
+    board' = stepBoard delta board
+    player' = stepPlayer delta board' space player
   in
-     {game | state <- state', player <- player'}
+     {game | state <- state', player <- player', board <- board'}
 
 gameState : Signal Game
 gameState = Signal.foldp stepGame defaultGame input
@@ -152,12 +198,17 @@ gameState = Signal.foldp stepGame defaultGame input
 -- View for the game.
 displayBackground : Int -> Int -> Form
 displayBackground width height =
-  filled yellow (rect (toFloat width) (toFloat height))
+  filled white (rect (toFloat width) (toFloat height))
+
+displayObject : Float -> Float -> Float -> Form -> Form
+displayObject x y angle form =
+  form
+    |> move (x, y)
+    |> rotate angle
 
 displayBoard : Board -> Form
 displayBoard board =
-  move
-    (board.x, board.y)
+  displayObject board.x board.y board.angle
     <| group [ (filled black <| circle board.radius)
              , (text
                   <| Text.height 40
@@ -175,7 +226,7 @@ drawDart dart =
       ]
 
 displayDart : Dart -> Form
-displayDart dart = move (dart.x, dart.y) (drawDart dart)
+displayDart dart = displayObject dart.x dart.y dart.angle <| (drawDart dart)
 
 display : (Int, Int) -> Game -> Element
 display (width, height) {state, board, player} =
