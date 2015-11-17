@@ -15,7 +15,7 @@ import Signal exposing ((<~), (~))
 import Time exposing (Time, fps, inSeconds)
 import Keyboard
 import Window
-import List exposing (map)
+import List
 import Debug
 
 --Inputs to the game.
@@ -30,8 +30,11 @@ delta = inSeconds <~ (fps 60)
 
 input : Signal Input
 input =
-  Signal.sampleOn delta
-    <| Input <~ Keyboard.space ~ Keyboard.enter ~ delta
+  let space' = Signal.dropRepeats <| Signal.sampleOn delta Keyboard.space
+  in
+  Signal.dropRepeats
+    <| Signal.sampleOn delta
+    <| Input <~ space' ~ Keyboard.enter ~ delta
 
 --Models of the game.
 type Direction = Left | Right
@@ -48,13 +51,20 @@ type alias Object a =
   }
 
 type alias Board =
-  Object { radius : Float, numberOfDarts : Int }
+  Object { radius : Float, numberOfDarts : Int, collisionY : Float }
 
 type alias Dart =
-  Object { height : Float, width : Float, radius : Float }
+  Object { height : Float
+         , width : Float
+         , radius : Float
+         , isFired : Bool
+         , collidedWithBoard : Bool
+         }
+
+type alias Darts = List Dart
 
 type alias Player =
-  Object { darts : List Dart, isShooting : Bool }
+  Object { darts : Darts, isShooting : Bool, dartToBeFired : Int }
 
 type State = Play | Pause
 
@@ -63,20 +73,6 @@ type alias Game =
   , board : Board
   , player : Player
   }
-
-{-
--- Not used because fields can't be updated AND inserted.
-defaultObject : Object
-defaultObject =
-  { x = 0
-  , y = 0
-  , vx = 0
-  , vy = 0
-  , angle = 0
-  , angularVelocity = 0
-  , direction = Right
-  }
-  -}
 
 defaultBoard : Board
 defaultBoard =
@@ -89,6 +85,7 @@ defaultBoard =
   , direction = Left
   , radius = 100
   , numberOfDarts = 10
+  , collisionY = -100
   }
 
 defaultDart : Dart
@@ -103,6 +100,8 @@ defaultDart =
   , height = 70
   , width = 1
   , radius = 5
+  , isFired = False
+  , collidedWithBoard = False
   }
 
 defaultPlayer : Player
@@ -116,6 +115,7 @@ defaultPlayer =
   , direction = defaultBoard.direction
   , darts = List.repeat 100 defaultDart
   , isShooting = False
+  , dartToBeFired = -1
   }
 
 defaultGame : Game
@@ -141,37 +141,70 @@ stepObject delta ({x, y, vx, vy, angle, angularVelocity, direction} as object) =
 
 collidedWithBoard : Dart -> Board -> Bool
 collidedWithBoard dart board =
-  dart.y > (board.y - (board.radius + (dart.height / 2) + dart.radius))
+  --dart.y > (board.y - (board.radius + (dart.height / 2) + dart.radius))
+  dart.y >= board.collisionY
 
 stepPlayer : Time -> Board -> Bool -> Player -> Player
-stepPlayer delta board isShooting player =
-  let darts' =
-        if isShooting || player.isShooting then
-          List.map (\dart -> stepDart delta dart board) player.darts
-        else
-          player.darts
-      isShooting' = isShooting || anyCollidedWithBoardOrInFlight darts' board
-  in
-    { player | darts <- darts', isShooting <- isShooting' }
+stepPlayer delta board space player =
+  let (dartToBeFired', darts') =
+        if space || player.isShooting then
+          let dartToBeFired =
+                if space then
+                  player.dartToBeFired + 1
+                else
+                  player.dartToBeFired
 
-anyCollidedWithBoardOrInFlight : List Dart -> Board -> Bool
-anyCollidedWithBoardOrInFlight darts board =
-  let check = (\dart -> collidedWithBoard dart board || dart.y > defaultDart.y)
+              setIsFired = (\index dart ->
+                              if index == dartToBeFired then
+                                {dart | isFired <- True}
+                              else
+                                dart
+                           )
+
+              darts =
+                List.indexedMap setIsFired player.darts
+                  |> List.map (\dart -> stepDart delta dart board)
+          in
+             (dartToBeFired, darts)
+        else
+          (player.dartToBeFired, player.darts)
+
+      isShooting' = space || anyInFlight darts' board
+  in
+    { player |
+               darts <- darts'
+             , isShooting <- isShooting'
+             , dartToBeFired <- dartToBeFired'
+    }
+
+anyInFlight : Darts -> Board -> Bool
+anyInFlight darts board =
+  let check =
+        (\dart -> not dart.collidedWithBoard && dart.y > defaultDart.y)
       collided =
-        List.any (\status -> status == True)
-          <| List.map check darts
+        List.map check darts
+          |> List.any ((==) True)
   in
      collided
 
 stepDart : Time -> Dart -> Board -> Dart
-stepDart delta ({x, y, vx, vy} as dart) board =
-  let dart' = stepObject delta {dart | vy <- 500}
-      (y', angle') = if collidedWithBoard dart board then
-                       (dart.y, board.angle)
-                     else
-                       (dart'.y, dart'.angle)
+stepDart delta ({x, y, vx, vy, isFired} as dart) board =
+  let vy' = if isFired then 500 else 0
+      dart' = stepObject delta {dart | vy <- vy'}
+      collidedWithBoard' = collidedWithBoard dart' board
+      (x', y', angle') =
+        if collidedWithBoard' then
+          --(dart'.y, dart'.y, dart'.angle)
+          (20 * cos board.angle, 20 * sin board.angle, board.angle)
+        else
+          (dart'.y, dart'.y, dart'.angle)
   in
-     {dart' | y <- y', angle <- angle'}
+     {dart' |
+             x <- x'
+            , y <- y'
+            , angle <- angle'
+            , collidedWithBoard <- collidedWithBoard'
+     }
 
 stepBoard : Time -> Board -> Board
 stepBoard delta board =
@@ -189,6 +222,8 @@ stepGame input game =
 
     board' = stepBoard delta board
     player' = stepPlayer delta board' space player
+    d = Debug.watch "Darts" player.darts
+    s = Debug.log "Space" space
   in
      {game | state <- state', player <- player', board <- board'}
 
@@ -202,25 +237,37 @@ displayBackground width height =
 
 displayObject : Float -> Float -> Float -> Form -> Form
 displayObject x y angle form =
-  form
-    |> move (x, y)
+  move (x, y) form
     |> rotate angle
 
-displayBoard : Board -> Form
-displayBoard board =
-  displayObject board.x board.y board.angle
-    <| group [ (filled black <| circle board.radius)
-             , (text
-                  <| Text.height 40
-                  <| Text.color white
-                  <| Text.fromString
-                  <| toString board.numberOfDarts
-                )
-             ]
+drawBoard : Board -> Form
+drawBoard board =
+  group
+    [ (filled black <| circle board.radius)
+    , (text
+        <| Text.height 40
+        <| Text.color white
+        <| Text.fromString
+        <| toString board.numberOfDarts
+      )
+    ]
+
+--Draw the board grouping darts that have collided with the board to the board.
+displayBoard : Board -> Darts -> Form
+displayBoard board darts =
+--(\dart -> (drawDart dart |> moveY -100))
+  let dartFun = (\dart -> displayDart dart)
+      dartsCollidedWithBoardForm = List.map dartFun darts
+  in
+  displayObject
+    board.x
+    board.y
+    board.angle
+    (group <| {- [drawBoard board] ++ -}dartsCollidedWithBoardForm)
 
 drawDart : Dart -> Form
 drawDart dart =
-    group
+  group
       [ (moveY -(dart.height / 2) <| filled black <| circle dart.radius)
       , (filled black <| rect dart.width dart.height)
       ]
@@ -230,11 +277,17 @@ displayDart dart = displayObject dart.x dart.y dart.angle <| (drawDart dart)
 
 display : (Int, Int) -> Game -> Element
 display (width, height) {state, board, player} =
+  let (dartsCollidedWithBoard, dartsNotCollidedWithBoard) =
+        List.partition .collidedWithBoard player.darts
+      dartNotCollidedWithBoardForms =
+        List.map displayDart dartsNotCollidedWithBoard
+  in
   container width height middle
     <| collage width height
       <| [ displayBackground width height
-         , displayBoard board
+         , displayBoard board dartsCollidedWithBoard
          ]
-         ++ List.map displayDart player.darts
+         ++ dartNotCollidedWithBoardForms
 
 main = display <~ Window.dimensions ~ gameState
+
