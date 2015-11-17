@@ -103,7 +103,7 @@ Elm.Aa.make = function (_elm) {
                     dartNotCollidedWithBoardForms)));
                  }();}
             _U.badCase($moduleName,
-            "between lines 280 and 290");
+            "between lines 293 and 303");
          }();
       }();
    });
@@ -112,10 +112,14 @@ Elm.Aa.make = function (_elm) {
       return _U.cmp(dart.y,
       board.collisionY) > -1;
    });
-   var Game = F3(function (a,b,c) {
+   var Game = F4(function (a,
+   b,
+   c,
+   d) {
       return {_: {}
              ,board: b
              ,player: c
+             ,spaceCount: d
              ,state: a};
    });
    var Pause = {ctor: "Pause"};
@@ -200,6 +204,7 @@ Elm.Aa.make = function (_elm) {
    var defaultGame = {_: {}
                      ,board: defaultBoard
                      ,player: defaultPlayer
+                     ,spaceCount: 0
                      ,state: Pause};
    var stepObject = F2(function (delta,
    _v6) {
@@ -228,12 +233,12 @@ Elm.Aa.make = function (_elm) {
             dart$,
             board);
             var $ = collidedWithBoard$ ? {ctor: "_Tuple3"
-                                         ,_0: 20 * $Basics.cos(board.angle)
-                                         ,_1: 20 * $Basics.sin(board.angle)
-                                         ,_2: board.angle} : {ctor: "_Tuple3"
-                                                             ,_0: dart$.y
-                                                             ,_1: dart$.y
-                                                             ,_2: dart$.angle},
+                                         ,_0: _v8.x
+                                         ,_1: _v8.y
+                                         ,_2: _v8.angle} : {ctor: "_Tuple3"
+                                                           ,_0: dart$.x
+                                                           ,_1: dart$.y
+                                                           ,_2: dart$.angle},
             x$ = $._0,
             y$ = $._1,
             angle$ = $._2;
@@ -299,30 +304,39 @@ Elm.Aa.make = function (_elm) {
          var $ = game,
          state = $.state,
          board = $.board,
-         player = $.player;
-         var d = A2($Debug.watch,
-         "Darts",
-         player.darts);
+         player = $.player,
+         spaceCount = $.spaceCount;
          var $ = input,
          space = $.space,
          enter = $.enter,
          delta = $.delta;
          var state$ = enter ? Play : state;
+         var $ = space ? _U.eq(spaceCount,
+         0) ? {ctor: "_Tuple2"
+              ,_0: space
+              ,_1: spaceCount + 1} : {ctor: "_Tuple2"
+                                     ,_0: false
+                                     ,_1: spaceCount + 1} : {ctor: "_Tuple2"
+                                                            ,_0: space
+                                                            ,_1: 0},
+         spacePressed = $._0,
+         spaceCount$ = $._1;
+         var sp = A2($Debug.watch,
+         "Space Pressed",
+         spacePressed);
          var board$ = A2(stepBoard,
          delta,
          board);
          var player$ = A4(stepPlayer,
          delta,
          board$,
-         space,
+         spacePressed,
          player);
-         var s = A2($Debug.log,
-         "Space",
-         space);
          return _U.replace([["state"
                             ,state$]
                            ,["player",player$]
-                           ,["board",board$]],
+                           ,["board",board$]
+                           ,["spaceCount",spaceCount$]],
          game);
       }();
    });
@@ -337,18 +351,13 @@ Elm.Aa.make = function (_elm) {
              ,enter: b
              ,space: a};
    });
-   var input = function () {
-      var space$ = $Signal.dropRepeats(A2($Signal.sampleOn,
-      delta,
-      $Keyboard.space));
-      return $Signal.dropRepeats($Signal.sampleOn(delta)(A2($Signal._op["~"],
-      A2($Signal._op["~"],
-      A2($Signal._op["<~"],
-      Input,
-      space$),
-      $Keyboard.enter),
-      delta)));
-   }();
+   var input = $Signal.sampleOn(delta)(A2($Signal._op["~"],
+   A2($Signal._op["~"],
+   A2($Signal._op["<~"],
+   Input,
+   $Signal.dropRepeats($Keyboard.space)),
+   $Keyboard.enter),
+   delta));
    var gameState = A3($Signal.foldp,
    stepGame,
    defaultGame,

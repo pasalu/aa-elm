@@ -30,11 +30,8 @@ delta = inSeconds <~ (fps 60)
 
 input : Signal Input
 input =
-  let space' = Signal.dropRepeats <| Signal.sampleOn delta Keyboard.space
-  in
-  Signal.dropRepeats
-    <| Signal.sampleOn delta
-    <| Input <~ space' ~ Keyboard.enter ~ delta
+  Signal.sampleOn delta
+    <| Input <~ Signal.dropRepeats Keyboard.space ~ Keyboard.enter ~ delta
 
 --Models of the game.
 type Direction = Left | Right
@@ -72,6 +69,7 @@ type alias Game =
   { state : State
   , board : Board
   , player : Player
+  , spaceCount : Int
   }
 
 defaultBoard : Board
@@ -123,6 +121,7 @@ defaultGame =
   { state = Pause
   , player = defaultPlayer
   , board = defaultBoard
+  , spaceCount = 0
   }
 
 --Update the game.
@@ -195,9 +194,10 @@ stepDart delta ({x, y, vx, vy, isFired} as dart) board =
       (x', y', angle') =
         if collidedWithBoard' then
           --(dart'.y, dart'.y, dart'.angle)
-          (20 * cos board.angle, 20 * sin board.angle, board.angle)
+          --(20 * cos board.angle, 20 * sin board.angle, board.angle)
+          (dart.x, dart.y, dart.angle)
         else
-          (dart'.y, dart'.y, dart'.angle)
+          (dart'.x, dart'.y, dart'.angle)
   in
      {dart' |
              x <- x'
@@ -214,18 +214,31 @@ stepGame : Input -> Game -> Game
 stepGame input game =
   let
     {space, enter, delta} = input
-    {state, board, player} = game
+    {state, board, player, spaceCount} = game
 
     state' =
       if | enter -> Play
          | otherwise -> state
 
+    (spacePressed, spaceCount') =
+      if space then
+         if spaceCount == 0 then
+            (space, spaceCount + 1)
+         else
+            (False, spaceCount + 1)
+      else
+        (space, 0)
+
     board' = stepBoard delta board
-    player' = stepPlayer delta board' space player
-    d = Debug.watch "Darts" player.darts
-    s = Debug.log "Space" space
+    player' = stepPlayer delta board' spacePressed player
+    sp = Debug.watch "Space Pressed" spacePressed
   in
-     {game | state <- state', player <- player', board <- board'}
+     {game |
+             state <- state'
+           , player <- player'
+           , board <- board'
+           , spaceCount <- spaceCount'
+     }
 
 gameState : Signal Game
 gameState = Signal.foldp stepGame defaultGame input
