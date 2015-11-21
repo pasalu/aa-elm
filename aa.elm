@@ -31,7 +31,7 @@ delta = inSeconds <~ (fps 60)
 input : Signal Input
 input =
   Signal.sampleOn delta
-    <| Input <~ Signal.dropRepeats Keyboard.space ~ Keyboard.enter ~ delta
+    <| Input <~ Keyboard.space ~ Keyboard.enter ~ delta
 
 --Models of the game.
 type Direction = Left | Right
@@ -83,7 +83,7 @@ defaultBoard =
   , direction = Left
   , radius = 100
   , numberOfDarts = 10
-  , collisionY = -100
+  , collisionY = 0
   }
 
 defaultDart : Dart
@@ -111,7 +111,7 @@ defaultPlayer =
   , angle = 0
   , angularVelocity = 0
   , direction = defaultBoard.direction
-  , darts = List.repeat 100 defaultDart
+  , darts = List.repeat 10 defaultDart
   , isShooting = False
   , dartToBeFired = -1
   }
@@ -187,24 +187,32 @@ anyInFlight darts board =
      collided
 
 stepDart : Time -> Dart -> Board -> Dart
-stepDart delta ({x, y, vx, vy, isFired} as dart) board =
-  let vy' = if isFired then 500 else 0
-      dart' = stepObject delta {dart | vy <- vy'}
-      collidedWithBoard' = collidedWithBoard dart' board
+stepDart delta dart board =
+  let vy' = if dart.isFired then 400 else 0
+      collidedWithBoard' = collidedWithBoard dart board
+      angularVelocity' = if collidedWithBoard' then 45 else 0
+      dartAngle = dart.angle + dart.angularVelocity
+
       (x', y', angle') =
         if collidedWithBoard' then
-          --(dart'.y, dart'.y, dart'.angle)
-          --(20 * cos board.angle, 20 * sin board.angle, board.angle)
-          (dart.x, dart.y, dart.angle)
+          ( (dart.y * cos dartAngle) + dart.x
+          , (dart.y * sin dartAngle) + dart.y
+          , dartAngle
+          )
         else
-          (dart'.x, dart'.y, dart'.angle)
+          (dart.x, dart.y, dart.angle)
+      dart' = stepObject
+                delta
+                {dart |
+                        x <- x'
+                      , y <- y'
+                      , vy <- vy'
+                      , angle <- angle'
+                      , angularVelocity <- angularVelocity'
+                      , collidedWithBoard <- collidedWithBoard'
+                }
   in
-     {dart' |
-             x <- x'
-            , y <- y'
-            , angle <- angle'
-            , collidedWithBoard <- collidedWithBoard'
-     }
+     dart'
 
 stepBoard : Time -> Board -> Board
 stepBoard delta board =
@@ -231,7 +239,6 @@ stepGame input game =
 
     board' = stepBoard delta board
     player' = stepPlayer delta board' spacePressed player
-    sp = Debug.watch "Space Pressed" spacePressed
   in
      {game |
              state <- state'
@@ -256,33 +263,30 @@ displayObject x y angle form =
 drawBoard : Board -> Form
 drawBoard board =
   group
-    [ (filled black <| circle board.radius)
-    , (text
+    [
+      (text
         <| Text.height 40
         <| Text.color white
         <| Text.fromString
         <| toString board.numberOfDarts
       )
+    , (filled black <| circle board.radius)
     ]
 
 --Draw the board grouping darts that have collided with the board to the board.
 displayBoard : Board -> Darts -> Form
 displayBoard board darts =
---(\dart -> (drawDart dart |> moveY -100))
-  let dartFun = (\dart -> displayDart dart)
-      dartsCollidedWithBoardForm = List.map dartFun darts
+  let dartFun = (\dart -> drawDart dart |> moveY -135)
+      dartForms = List.map dartFun darts
   in
-  displayObject
-    board.x
-    board.y
-    board.angle
-    (group <| {- [drawBoard board] ++ -}dartsCollidedWithBoardForm)
+  displayObject board.x board.y board.angle
+    <| group <| (drawBoard board) :: dartForms
 
 drawDart : Dart -> Form
 drawDart dart =
   group
-      [ (moveY -(dart.height / 2) <| filled black <| circle dart.radius)
-      , (filled black <| rect dart.width dart.height)
+      [ (moveY -(dart.height / 2) <| filled yellow <| circle dart.radius)
+      , (filled yellow <| rect dart.width dart.height)
       ]
 
 displayDart : Dart -> Form
@@ -290,17 +294,16 @@ displayDart dart = displayObject dart.x dart.y dart.angle <| (drawDart dart)
 
 display : (Int, Int) -> Game -> Element
 display (width, height) {state, board, player} =
-  let (dartsCollidedWithBoard, dartsNotCollidedWithBoard) =
-        List.partition .collidedWithBoard player.darts
-      dartNotCollidedWithBoardForms =
-        List.map displayDart dartsNotCollidedWithBoard
+  let (collidedWithBoard, notCollidedWithBoard) =
+    List.partition .collidedWithBoard player.darts
   in
   container width height middle
     <| collage width height
       <| [ displayBackground width height
-         , displayBoard board dartsCollidedWithBoard
+         , displayBoard board collidedWithBoard
          ]
-         ++ dartNotCollidedWithBoardForms
+         ++ List.map displayDart notCollidedWithBoard
 
+main : Signal Element
 main = display <~ Window.dimensions ~ gameState
 
