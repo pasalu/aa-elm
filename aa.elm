@@ -127,15 +127,16 @@ defaultGame =
 --Update the game.
 stepObject : Time -> Object a -> Object a
 stepObject delta ({x, y, vx, vy, angle, angularVelocity, direction} as object) =
+{-
   let angle' = if direction == Left then
                  angle + angularVelocity * delta
                else
                  angle - angularVelocity * delta
   in
+     -}
   { object |
       x <- x + vx * delta
     , y <- y + vy * delta
-    , angle <- angle'
   }
 
 collidedWithBoard : Dart -> Board -> Bool
@@ -145,28 +146,28 @@ collidedWithBoard dart board =
 
 stepPlayer : Time -> Board -> Bool -> Player -> Player
 stepPlayer delta board space player =
-  let (dartToBeFired', darts') =
+  let dartToBeFired' =
         if space || player.isShooting then
           let dartToBeFired =
                 if space then
                   player.dartToBeFired + 1
                 else
                   player.dartToBeFired
-
-              setIsFired = (\index dart ->
-                              if index == dartToBeFired then
-                                {dart | isFired <- True}
-                              else
-                                dart
-                           )
-
-              darts =
-                List.indexedMap setIsFired player.darts
-                  |> List.map (\dart -> stepDart delta dart board)
           in
-             (dartToBeFired, darts)
+             dartToBeFired
         else
-          (player.dartToBeFired, player.darts)
+          player.dartToBeFired
+
+      setIsFired = (\index dart ->
+                      if index == dartToBeFired' then
+                        {dart | isFired <- True}
+                      else
+                        dart
+                   )
+
+      darts' =
+        List.indexedMap setIsFired player.darts
+          |> List.map (\dart -> stepDart delta dart board)
 
       isShooting' = space || anyInFlight darts' board
   in
@@ -188,27 +189,31 @@ anyInFlight darts board =
 
 stepDart : Time -> Dart -> Board -> Dart
 stepDart delta dart board =
-  let vy' = if dart.isFired then 400 else 0
-      collidedWithBoard' = collidedWithBoard dart board
-      angularVelocity' = if collidedWithBoard' then 45 else 0
-      dartAngle = dart.angle + dart.angularVelocity
+  let vy' = if dart.isFired && not dart.collidedWithBoard then 400 else 0
+      collidedWithBoard' =
+        if not dart.collidedWithBoard then
+           collidedWithBoard dart board
+        else
+          dart.collidedWithBoard
 
-      (x', y', angle') =
-        if collidedWithBoard' then
-          ( (dart.y * cos dartAngle) + dart.x
-          , (dart.y * sin dartAngle) + dart.y
-          , dartAngle
+      --angularVelocity' = if collidedWithBoard' then 45 else 0
+      dartAngle = dart.angle + if collidedWithBoard' then 0.1 else 0
+
+      (x', y') =
+        if dart.collidedWithBoard then
+          (board.radius * cos dartAngle
+          ,(dart.height / 2) + board.y + board.radius * sin dartAngle
           )
         else
-          (dart.x, dart.y, dart.angle)
+          (dart.x, dart.y)
       dart' = stepObject
                 delta
                 {dart |
                         x <- x'
                       , y <- y'
                       , vy <- vy'
-                      , angle <- angle'
-                      , angularVelocity <- angularVelocity'
+                      , angle <- dartAngle
+                      --, angularVelocity <- angularVelocity'
                       , collidedWithBoard <- collidedWithBoard'
                 }
   in
@@ -239,6 +244,7 @@ stepGame input game =
 
     board' = stepBoard delta board
     player' = stepPlayer delta board' spacePressed player
+    w = Debug.watch "Darts" player'.darts
   in
      {game |
              state <- state'
@@ -274,13 +280,9 @@ drawBoard board =
     ]
 
 --Draw the board grouping darts that have collided with the board to the board.
-displayBoard : Board -> Darts -> Form
-displayBoard board darts =
-  let dartFun = (\dart -> drawDart dart |> moveY -135)
-      dartForms = List.map dartFun darts
-  in
-  displayObject board.x board.y board.angle
-    <| group <| (drawBoard board) :: dartForms
+displayBoard : Board -> Form
+displayBoard board =
+  displayObject board.x board.y board.angle <| drawBoard board
 
 drawDart : Dart -> Form
 drawDart dart =
@@ -290,19 +292,19 @@ drawDart dart =
       ]
 
 displayDart : Dart -> Form
-displayDart dart = displayObject dart.x dart.y dart.angle <| (drawDart dart)
+displayDart dart = displayObject dart.x dart.y 0 <| (drawDart dart)
 
 display : (Int, Int) -> Game -> Element
 display (width, height) {state, board, player} =
-  let (collidedWithBoard, notCollidedWithBoard) =
-    List.partition .collidedWithBoard player.darts
+  let dartForms = List.map displayDart player.darts
+      tr = List.map (Debug.trace "Dart Forms") dartForms
   in
   container width height middle
     <| collage width height
       <| [ displayBackground width height
-         , displayBoard board collidedWithBoard
+         , displayBoard board
          ]
-         ++ List.map displayDart notCollidedWithBoard
+         ++ dartForms
 
 main : Signal Element
 main = display <~ Window.dimensions ~ gameState
