@@ -51,9 +51,7 @@ type alias Board =
   Object { radius : Float, numberOfDarts : Int, collisionY : Float }
 
 type alias Dart =
-  Object { height : Float
-         , width : Float
-         , radius : Float
+  Object { radius : Float
          , isFired : Bool
          , collidedWithBoard : Bool
          }
@@ -95,8 +93,6 @@ defaultDart =
   , angle = 0
   , angularVelocity = 0
   , direction = Right
-  , height = 70
-  , width = 1
   , radius = 5
   , isFired = False
   , collidedWithBoard = False
@@ -189,7 +185,7 @@ anyInFlight darts board =
 
 stepDart : Time -> Dart -> Board -> Dart
 stepDart delta dart board =
-  let vy' = if dart.isFired && not dart.collidedWithBoard then 400 else 0
+  let vy' = if dart.isFired && not dart.collidedWithBoard then 600 else 0
       collidedWithBoard' =
         if not dart.collidedWithBoard then
            collidedWithBoard dart board
@@ -201,8 +197,8 @@ stepDart delta dart board =
 
       (x', y') =
         if dart.collidedWithBoard then
-          (board.radius * cos dartAngle
-          ,(dart.height / 2) + board.y + board.radius * sin dartAngle
+          (board.x + board.radius * cos dartAngle
+          ,board.y + board.radius * sin dartAngle
           )
         else
           (dart.x, dart.y)
@@ -213,7 +209,6 @@ stepDart delta dart board =
                       , y <- y'
                       , vy <- vy'
                       , angle <- dartAngle
-                      --, angularVelocity <- angularVelocity'
                       , collidedWithBoard <- collidedWithBoard'
                 }
   in
@@ -286,10 +281,8 @@ displayBoard board =
 
 drawDart : Dart -> Form
 drawDart dart =
-  group
-      [ (moveY -(dart.height / 2) <| filled yellow <| circle dart.radius)
-      , (filled yellow <| rect dart.width dart.height)
-      ]
+  circle dart.radius
+    |> filled yellow 
 
 displayDart : Dart -> Form
 displayDart dart = displayObject dart.x dart.y 0 <| (drawDart dart)

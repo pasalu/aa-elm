@@ -23,10 +23,7 @@ Elm.Aa.make = function (_elm) {
    $Time = Elm.Time.make(_elm),
    $Window = Elm.Window.make(_elm);
    var drawDart = function (dart) {
-      return $Graphics$Collage.group(_L.fromArray([$Graphics$Collage.moveY(0 - dart.height / 2)($Graphics$Collage.filled($Color.yellow)($Graphics$Collage.circle(dart.radius)))
-                                                  ,$Graphics$Collage.filled($Color.yellow)(A2($Graphics$Collage.rect,
-                                                  dart.width,
-                                                  dart.height))]));
+      return $Graphics$Collage.filled($Color.yellow)($Graphics$Collage.circle(dart.radius));
    };
    var drawBoard = function (board) {
       return $Graphics$Collage.group(_L.fromArray([$Graphics$Collage.text($Text.height(40)($Text.color($Color.white)($Text.fromString($Basics.toString(board.numberOfDarts)))))
@@ -86,7 +83,7 @@ Elm.Aa.make = function (_elm) {
                     dartForms)));
                  }();}
             _U.badCase($moduleName,
-            "between lines 299 and 307");
+            "between lines 292 and 300");
          }();
       }();
    });
@@ -113,13 +110,13 @@ Elm.Aa.make = function (_elm) {
          board) : dart.collidedWithBoard;
          var dartAngle = dart.angle + (collidedWithBoard$ ? 0.1 : 0);
          var $ = dart.collidedWithBoard ? {ctor: "_Tuple2"
-                                          ,_0: board.radius * $Basics.cos(dartAngle)
-                                          ,_1: dart.height / 2 + board.y + board.radius * $Basics.sin(dartAngle)} : {ctor: "_Tuple2"
-                                                                                                                    ,_0: dart.x
-                                                                                                                    ,_1: dart.y},
+                                          ,_0: board.x + board.radius * $Basics.cos(dartAngle)
+                                          ,_1: board.y + board.radius * $Basics.sin(dartAngle)} : {ctor: "_Tuple2"
+                                                                                                  ,_0: dart.x
+                                                                                                  ,_1: dart.y},
          x$ = $._0,
          y$ = $._1;
-         var vy$ = dart.isFired && $Basics.not(dart.collidedWithBoard) ? 400 : 0;
+         var vy$ = dart.isFired && $Basics.not(dart.collidedWithBoard) ? 600 : 0;
          var dart$ = A2(stepObject,
          delta,
          _U.replace([["x",x$]
@@ -178,12 +175,10 @@ Elm.Aa.make = function (_elm) {
                      ,angularVelocity: 0
                      ,collidedWithBoard: false
                      ,direction: Right
-                     ,height: 70
                      ,isFired: false
                      ,radius: 5
                      ,vx: 0
                      ,vy: 0
-                     ,width: 1
                      ,x: 0
                      ,y: -300};
    var anyInFlight = F2(function (darts,
