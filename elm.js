@@ -23,8 +23,9 @@ Elm.Aa.make = function (_elm) {
    $Text = Elm.Text.make(_elm),
    $Time = Elm.Time.make(_elm),
    $Window = Elm.Window.make(_elm);
+   var dartColor = $Color.black;
    var drawDart = function (dart) {
-      return $Graphics$Collage.filled($Color.yellow)($Graphics$Collage.circle(dart.radius));
+      return $Graphics$Collage.filled(dartColor)($Graphics$Collage.circle(dart.radius));
    };
    var drawBoard = function (board) {
       return $Graphics$Collage.group(_L.fromArray([$Graphics$Collage.text($Text.height(40)($Text.color($Color.white)($Text.fromString($Basics.toString(board.numberOfDarts)))))
@@ -45,10 +46,11 @@ Elm.Aa.make = function (_elm) {
       board.angle)(drawBoard(board));
    };
    var displayDart = function (dart) {
-      return A3(displayObject,
+      return A4(displayObject,
       dart.x,
       dart.y,
-      0)(drawDart(dart));
+      0,
+      drawDart(dart));
    };
    var displayBackground = F2(function (width,
    height) {
@@ -58,48 +60,18 @@ Elm.Aa.make = function (_elm) {
       $Basics.toFloat(width),
       $Basics.toFloat(height)));
    });
-   var display = F2(function (_v0,
-   _v1) {
-      return function () {
-         return function () {
-            switch (_v0.ctor)
-            {case "_Tuple2":
-               return function () {
-                    var dartForms = A2($List.map,
-                    displayDart,
-                    _v1.player.darts);
-                    var tr = A2($List.map,
-                    $Debug.trace("Dart Forms"),
-                    dartForms);
-                    return A3($Graphics$Element.container,
-                    _v0._0,
-                    _v0._1,
-                    $Graphics$Element.middle)(A2($Graphics$Collage.collage,
-                    _v0._0,
-                    _v0._1)(A2($Basics._op["++"],
-                    _L.fromArray([A2(displayBackground,
-                                 _v0._0,
-                                 _v0._1)
-                                 ,displayBoard(_v1.board)]),
-                    dartForms)));
-                 }();}
-            _U.badCase($moduleName,
-            "between lines 292 and 300");
-         }();
-      }();
-   });
    var collidedWithBoard = F2(function (dart,
    board) {
       return _U.cmp(dart.y,
       board.collisionY) > -1;
    });
    var stepObject = F2(function (delta,
-   _v6) {
+   _v0) {
       return function () {
          return _U.replace([["x"
-                            ,_v6.x + _v6.vx * delta]
-                           ,["y",_v6.y + _v6.vy * delta]],
-         _v6);
+                            ,_v0.x + _v0.vx * delta]
+                           ,["y",_v0.y + _v0.vy * delta]],
+         _v0);
       }();
    });
    var stepDart = F3(function (delta,
@@ -109,12 +81,12 @@ Elm.Aa.make = function (_elm) {
          var collidedWithBoard$ = $Basics.not(dart.collidedWithBoard) ? A2(collidedWithBoard,
          dart,
          board) : dart.collidedWithBoard;
-         var dartAngle = dart.angle + (collidedWithBoard$ ? 0.1 : 0);
+         var angle$ = dart.angle + (collidedWithBoard$ ? 0.1 : 0);
          var $ = dart.collidedWithBoard ? {ctor: "_Tuple2"
-                                          ,_0: board.x + board.radius * $Basics.cos(dartAngle)
-                                          ,_1: board.y + board.radius * $Basics.sin(dartAngle)} : {ctor: "_Tuple2"
-                                                                                                  ,_0: dart.x
-                                                                                                  ,_1: dart.y},
+                                          ,_0: board.x + 2 * board.radius * $Basics.cos(angle$)
+                                          ,_1: board.y + 2 * board.radius * $Basics.sin(angle$)} : {ctor: "_Tuple2"
+                                                                                                   ,_0: dart.x
+                                                                                                   ,_1: dart.y},
          x$ = $._0,
          y$ = $._1;
          var vy$ = dart.isFired && $Basics.not(dart.collidedWithBoard) ? 600 : 0;
@@ -123,7 +95,7 @@ Elm.Aa.make = function (_elm) {
          _U.replace([["x",x$]
                     ,["y",y$]
                     ,["vy",vy$]
-                    ,["angle",dartAngle]
+                    ,["angle",angle$]
                     ,["collidedWithBoard"
                      ,collidedWithBoard$]],
          dart));
@@ -177,7 +149,7 @@ Elm.Aa.make = function (_elm) {
                      ,collidedWithBoard: false
                      ,direction: Right
                      ,isFired: false
-                     ,radius: 5
+                     ,radius: 10
                      ,vx: 0
                      ,vy: 0
                      ,x: 0
@@ -259,14 +231,17 @@ Elm.Aa.make = function (_elm) {
          var board$ = A2(stepBoard,
          delta,
          board);
+         var b = A2($Debug.watch,
+         "Board",
+         board$);
          var player$ = A4(stepPlayer,
          delta,
          board$,
          spacePressed,
          player);
-         var w = A2($Debug.watch,
-         "Darts",
-         player$.darts);
+         var f = A2($Debug.watch,
+         "First dart",
+         $List.head(player$.darts));
          return _U.replace([["state"
                             ,state$]
                            ,["player",player$]
@@ -305,6 +280,49 @@ Elm.Aa.make = function (_elm) {
                      ,player: defaultPlayer
                      ,spaceCount: 0
                      ,state: Pause};
+   var drawLine = function (dart) {
+      return $Graphics$Collage.traced($Graphics$Collage.solid(dartColor))(A2($Graphics$Collage.segment,
+      {ctor: "_Tuple2"
+      ,_0: defaultBoard.x
+      ,_1: defaultBoard.y},
+      {ctor: "_Tuple2"
+      ,_0: dart.x
+      ,_1: dart.y}));
+   };
+   var display = F2(function (_v2,
+   _v3) {
+      return function () {
+         return function () {
+            switch (_v2.ctor)
+            {case "_Tuple2":
+               return function () {
+                    var lineForms = $List.map(drawLine)(A2($List.filter,
+                    function (_) {
+                       return _.collidedWithBoard;
+                    },
+                    _v3.player.darts));
+                    var dartForms = A2($List.map,
+                    displayDart,
+                    _v3.player.darts);
+                    return A3($Graphics$Element.container,
+                    _v2._0,
+                    _v2._1,
+                    $Graphics$Element.middle)(A2($Graphics$Collage.collage,
+                    _v2._0,
+                    _v2._1)(A2($Basics._op["++"],
+                    _L.fromArray([A2(displayBackground,
+                                 _v2._0,
+                                 _v2._1)
+                                 ,displayBoard(_v3.board)]),
+                    A2($Basics._op["++"],
+                    dartForms,
+                    lineForms))));
+                 }();}
+            _U.badCase($moduleName,
+            "between lines 302 and 315");
+         }();
+      }();
+   });
    var delta = A2($Signal._op["<~"],
    $Time.inSeconds,
    $Time.fps(60));
@@ -358,7 +376,9 @@ Elm.Aa.make = function (_elm) {
                     ,displayObject: displayObject
                     ,drawBoard: drawBoard
                     ,displayBoard: displayBoard
+                    ,dartColor: dartColor
                     ,drawDart: drawDart
+                    ,drawLine: drawLine
                     ,displayDart: displayDart
                     ,display: display
                     ,main: main};

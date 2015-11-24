@@ -93,7 +93,7 @@ defaultDart =
   , angle = 0
   , angularVelocity = 0
   , direction = Right
-  , radius = 5
+  , radius = 10
   , isFired = False
   , collidedWithBoard = False
   }
@@ -192,13 +192,12 @@ stepDart delta dart board =
         else
           dart.collidedWithBoard
 
-      --angularVelocity' = if collidedWithBoard' then 45 else 0
-      dartAngle = dart.angle + if collidedWithBoard' then 0.1 else 0
+      angle' = dart.angle + if collidedWithBoard' then 0.1 else 0
 
       (x', y') =
         if dart.collidedWithBoard then
-          (board.x + board.radius * cos dartAngle
-          ,board.y + board.radius * sin dartAngle
+          (board.x + 2 * board.radius * cos angle'
+          ,board.y + 2 * board.radius * sin angle'
           )
         else
           (dart.x, dart.y)
@@ -208,7 +207,7 @@ stepDart delta dart board =
                         x <- x'
                       , y <- y'
                       , vy <- vy'
-                      , angle <- dartAngle
+                      , angle <- angle'
                       , collidedWithBoard <- collidedWithBoard'
                 }
   in
@@ -239,7 +238,9 @@ stepGame input game =
 
     board' = stepBoard delta board
     player' = stepPlayer delta board' spacePressed player
-    w = Debug.watch "Darts" player'.darts
+    b = Debug.watch "Board" board'
+    f = Debug.watch "First dart" (List.head player'.darts)
+    --w = Debug.watch "Darts" player'.darts
   in
      {game |
              state <- state'
@@ -256,6 +257,7 @@ displayBackground : Int -> Int -> Form
 displayBackground width height =
   filled white (rect (toFloat width) (toFloat height))
 
+--TODO: Remove angle parameter.
 displayObject : Float -> Float -> Float -> Form -> Form
 displayObject x y angle form =
   move (x, y) form
@@ -279,18 +281,30 @@ displayBoard : Board -> Form
 displayBoard board =
   displayObject board.x board.y board.angle <| drawBoard board
 
+dartColor : Color.Color
+dartColor = black
+
 drawDart : Dart -> Form
 drawDart dart =
   circle dart.radius
-    |> filled yellow 
+    |> filled dartColor
+
+drawLine : Dart -> Form
+drawLine dart =
+  segment (defaultBoard.x, defaultBoard.y) (dart.x, dart.y)
+    |> traced (solid dartColor)
 
 displayDart : Dart -> Form
-displayDart dart = displayObject dart.x dart.y 0 <| (drawDart dart)
+displayDart dart = displayObject dart.x dart.y 0 (drawDart dart)
 
 display : (Int, Int) -> Game -> Element
 display (width, height) {state, board, player} =
   let dartForms = List.map displayDart player.darts
-      tr = List.map (Debug.trace "Dart Forms") dartForms
+
+      --Lines for the darts drawn separately so they wont move.
+      lineForms =
+        List.filter .collidedWithBoard player.darts
+          |> List.map drawLine
   in
   container width height middle
     <| collage width height
@@ -298,6 +312,7 @@ display (width, height) {state, board, player} =
          , displayBoard board
          ]
          ++ dartForms
+         ++ lineForms
 
 main : Signal Element
 main = display <~ Window.dimensions ~ gameState
