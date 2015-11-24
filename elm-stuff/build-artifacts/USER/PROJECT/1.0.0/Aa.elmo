@@ -143,7 +143,7 @@ Elm.Aa.make = function (_elm) {
    });
    var Right = {ctor: "Right"};
    var defaultDart = {_: {}
-                     ,angle: 0
+                     ,angle: 3 * $Basics.pi / 2
                      ,angularVelocity: 0
                      ,collidedWithBoard: false
                      ,direction: Right
@@ -253,7 +253,7 @@ Elm.Aa.make = function (_elm) {
    var defaultBoard = {_: {}
                       ,angle: 0
                       ,angularVelocity: 5
-                      ,collisionY: 0
+                      ,collisionY: -85
                       ,direction: Left
                       ,numberOfDarts: 10
                       ,radius: 100
@@ -318,7 +318,7 @@ Elm.Aa.make = function (_elm) {
                     lineForms))));
                  }();}
             _U.badCase($moduleName,
-            "between lines 302 and 315");
+            "between lines 302 and 316");
          }();
       }();
    });

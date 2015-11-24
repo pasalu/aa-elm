@@ -81,7 +81,7 @@ defaultBoard =
   , direction = Left
   , radius = 100
   , numberOfDarts = 10
-  , collisionY = 0
+  , collisionY = -85
   }
 
 defaultDart : Dart
@@ -90,7 +90,7 @@ defaultDart =
   , y = -300
   , vx = 0
   , vy = 0
-  , angle = 0
+  , angle = (3 * pi) / 2 --270 degrees in radians.
   , angularVelocity = 0
   , direction = Right
   , radius = 10
@@ -301,7 +301,8 @@ display : (Int, Int) -> Game -> Element
 display (width, height) {state, board, player} =
   let dartForms = List.map displayDart player.darts
 
-      --Lines for the darts drawn separately so they wont move.
+      --Lines for the darts drawn separately so they wont move when the darts
+      --are relocated.
       lineForms =
         List.filter .collidedWithBoard player.darts
           |> List.map drawLine
