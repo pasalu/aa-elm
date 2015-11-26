@@ -61,13 +61,14 @@ type alias Darts = List Dart
 type alias Player =
   Object { darts : Darts, isShooting : Bool, dartToBeFired : Int }
 
-type State = Play | Pause
+type State = LoadLevel | Play | Pause
 
 type alias Game =
   { state : State
   , board : Board
   , player : Player
   , spaceCount : Int
+  , level : Int
   }
 
 defaultBoard : Board
@@ -114,10 +115,11 @@ defaultPlayer =
 
 defaultGame : Game
 defaultGame =
-  { state = Pause
+  { state = LoadLevel
   , player = defaultPlayer
   , board = defaultBoard
   , spaceCount = 0
+  , level = 1
   }
 
 --Update the game.
@@ -213,20 +215,50 @@ stepDart delta dart board =
   in
      dart'
 
+initialBoardDarts : Int -> Darts
+initialBoardDarts n =
+  let delta = (2 * pi) / toFloat n --360 degrees divided by n.
+      nDeltas = List.repeat n delta
+      angles = List.scanl (+) 0 nDeltas
+      updateAngle =
+        (\dart angle -> {dart | angle <- angle
+                              , collidedWithBoard <- True
+                        })
+      defaultDarts = List.repeat n defaultDart
+  in
+    List.map2 updateAngle defaultDarts angles
+
 stepBoard : Time -> Board -> Board
 stepBoard delta board =
   stepObject delta board
+
+loadLevel : Game -> Game
+loadLevel game =
+  let player' =
+    {defaultPlayer |
+                     darts <-  initialBoardDarts 5 ++ defaultPlayer.darts
+                   , dartToBeFired <- 4
+    }
+      w = Debug.log "Darts" player'.darts
+  in
+  {game |
+          player <- player'
+  }
 
 stepGame : Input -> Game -> Game
 stepGame input game =
   let
     {space, enter, delta} = input
-    {state, board, player, spaceCount} = game
+
+    game' = if game.state == LoadLevel then loadLevel game else game
+    {state, board, player, spaceCount} = game'
 
     state' =
-      if | enter -> Play
-         | otherwise -> state
+      case state of
+        LoadLevel -> Play
+        _ -> state
 
+    --TODO: Move this into a function.
     (spacePressed, spaceCount') =
       if space then
          if spaceCount == 0 then
@@ -238,9 +270,7 @@ stepGame input game =
 
     board' = stepBoard delta board
     player' = stepPlayer delta board' spacePressed player
-    b = Debug.watch "Board" board'
-    f = Debug.watch "First dart" (List.head player'.darts)
-    --w = Debug.watch "Darts" player'.darts
+    w = Debug.watch "Darts" player'.darts
   in
      {game |
              state <- state'
@@ -297,6 +327,7 @@ drawLine dart =
 displayDart : Dart -> Form
 displayDart dart = displayObject dart.x dart.y 0 (drawDart dart)
 
+--TODO: Remove unused state parameter.
 display : (Int, Int) -> Game -> Element
 display (width, height) {state, board, player} =
   let dartForms = List.map displayDart player.darts

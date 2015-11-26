@@ -108,18 +108,21 @@ Elm.Aa.make = function (_elm) {
       delta,
       board);
    });
-   var Game = F4(function (a,
+   var Game = F5(function (a,
    b,
    c,
-   d) {
+   d,
+   e) {
       return {_: {}
              ,board: b
+             ,level: e
              ,player: c
              ,spaceCount: d
              ,state: a};
    });
    var Pause = {ctor: "Pause"};
    var Play = {ctor: "Play"};
+   var LoadLevel = {ctor: "LoadLevel"};
    var Object = F8(function (a,
    b,
    c,
@@ -205,51 +208,34 @@ Elm.Aa.make = function (_elm) {
          player);
       }();
    });
-   var stepGame = F2(function (input,
-   game) {
+   var initialBoardDarts = function (n) {
       return function () {
-         var $ = game,
-         state = $.state,
-         board = $.board,
-         player = $.player,
-         spaceCount = $.spaceCount;
-         var $ = input,
-         space = $.space,
-         enter = $.enter,
-         delta = $.delta;
-         var state$ = enter ? Play : state;
-         var $ = space ? _U.eq(spaceCount,
-         0) ? {ctor: "_Tuple2"
-              ,_0: space
-              ,_1: spaceCount + 1} : {ctor: "_Tuple2"
-                                     ,_0: false
-                                     ,_1: spaceCount + 1} : {ctor: "_Tuple2"
-                                                            ,_0: space
-                                                            ,_1: 0},
-         spacePressed = $._0,
-         spaceCount$ = $._1;
-         var board$ = A2(stepBoard,
-         delta,
-         board);
-         var b = A2($Debug.watch,
-         "Board",
-         board$);
-         var player$ = A4(stepPlayer,
-         delta,
-         board$,
-         spacePressed,
-         player);
-         var f = A2($Debug.watch,
-         "First dart",
-         $List.head(player$.darts));
-         return _U.replace([["state"
-                            ,state$]
-                           ,["player",player$]
-                           ,["board",board$]
-                           ,["spaceCount",spaceCount$]],
-         game);
+         var defaultDarts = A2($List.repeat,
+         n,
+         defaultDart);
+         var updateAngle = F2(function (dart,
+         angle) {
+            return _U.replace([["angle"
+                               ,angle]
+                              ,["collidedWithBoard",true]],
+            dart);
+         });
+         var delta = 2 * $Basics.pi / $Basics.toFloat(n);
+         var nDeltas = A2($List.repeat,
+         n,
+         delta);
+         var angles = A3($List.scanl,
+         F2(function (x,y) {
+            return x + y;
+         }),
+         0,
+         nDeltas);
+         return A3($List.map2,
+         updateAngle,
+         defaultDarts,
+         angles);
       }();
-   });
+   };
    var Left = {ctor: "Left"};
    var defaultBoard = {_: {}
                       ,angle: 0
@@ -275,11 +261,76 @@ Elm.Aa.make = function (_elm) {
                        ,vy: 0
                        ,x: 0
                        ,y: 0};
+   var loadLevel = function (game) {
+      return function () {
+         var player$ = _U.replace([["darts"
+                                   ,A2($Basics._op["++"],
+                                   initialBoardDarts(5),
+                                   defaultPlayer.darts)]
+                                  ,["dartToBeFired",4]],
+         defaultPlayer);
+         var w = A2($Debug.log,
+         "Darts",
+         player$.darts);
+         return _U.replace([["player"
+                            ,player$]],
+         game);
+      }();
+   };
+   var stepGame = F2(function (input,
+   game) {
+      return function () {
+         var game$ = _U.eq(game.state,
+         LoadLevel) ? loadLevel(game) : game;
+         var $ = game$,
+         state = $.state,
+         board = $.board,
+         player = $.player,
+         spaceCount = $.spaceCount;
+         var state$ = function () {
+            switch (state.ctor)
+            {case "LoadLevel": return Play;}
+            return state;
+         }();
+         var $ = input,
+         space = $.space,
+         enter = $.enter,
+         delta = $.delta;
+         var $ = space ? _U.eq(spaceCount,
+         0) ? {ctor: "_Tuple2"
+              ,_0: space
+              ,_1: spaceCount + 1} : {ctor: "_Tuple2"
+                                     ,_0: false
+                                     ,_1: spaceCount + 1} : {ctor: "_Tuple2"
+                                                            ,_0: space
+                                                            ,_1: 0},
+         spacePressed = $._0,
+         spaceCount$ = $._1;
+         var board$ = A2(stepBoard,
+         delta,
+         board);
+         var player$ = A4(stepPlayer,
+         delta,
+         board$,
+         spacePressed,
+         player);
+         var w = A2($Debug.watch,
+         "Darts",
+         player$.darts);
+         return _U.replace([["state"
+                            ,state$]
+                           ,["player",player$]
+                           ,["board",board$]
+                           ,["spaceCount",spaceCount$]],
+         game);
+      }();
+   });
    var defaultGame = {_: {}
                      ,board: defaultBoard
+                     ,level: 1
                      ,player: defaultPlayer
                      ,spaceCount: 0
-                     ,state: Pause};
+                     ,state: LoadLevel};
    var drawLine = function (dart) {
       return $Graphics$Collage.traced($Graphics$Collage.solid(dartColor))(A2($Graphics$Collage.segment,
       {ctor: "_Tuple2"
@@ -289,37 +340,37 @@ Elm.Aa.make = function (_elm) {
       ,_0: dart.x
       ,_1: dart.y}));
    };
-   var display = F2(function (_v2,
-   _v3) {
+   var display = F2(function (_v3,
+   _v4) {
       return function () {
          return function () {
-            switch (_v2.ctor)
+            switch (_v3.ctor)
             {case "_Tuple2":
                return function () {
                     var lineForms = $List.map(drawLine)(A2($List.filter,
                     function (_) {
                        return _.collidedWithBoard;
                     },
-                    _v3.player.darts));
+                    _v4.player.darts));
                     var dartForms = A2($List.map,
                     displayDart,
-                    _v3.player.darts);
+                    _v4.player.darts);
                     return A3($Graphics$Element.container,
-                    _v2._0,
-                    _v2._1,
+                    _v3._0,
+                    _v3._1,
                     $Graphics$Element.middle)(A2($Graphics$Collage.collage,
-                    _v2._0,
-                    _v2._1)(A2($Basics._op["++"],
+                    _v3._0,
+                    _v3._1)(A2($Basics._op["++"],
                     _L.fromArray([A2(displayBackground,
-                                 _v2._0,
-                                 _v2._1)
-                                 ,displayBoard(_v3.board)]),
+                                 _v3._0,
+                                 _v3._1)
+                                 ,displayBoard(_v4.board)]),
                     A2($Basics._op["++"],
                     dartForms,
                     lineForms))));
                  }();}
             _U.badCase($moduleName,
-            "between lines 302 and 316");
+            "between lines 333 and 347");
          }();
       }();
    });
@@ -357,6 +408,7 @@ Elm.Aa.make = function (_elm) {
                     ,Left: Left
                     ,Right: Right
                     ,Object: Object
+                    ,LoadLevel: LoadLevel
                     ,Play: Play
                     ,Pause: Pause
                     ,Game: Game
@@ -369,7 +421,9 @@ Elm.Aa.make = function (_elm) {
                     ,stepPlayer: stepPlayer
                     ,anyInFlight: anyInFlight
                     ,stepDart: stepDart
+                    ,initialBoardDarts: initialBoardDarts
                     ,stepBoard: stepBoard
+                    ,loadLevel: loadLevel
                     ,stepGame: stepGame
                     ,gameState: gameState
                     ,displayBackground: displayBackground
