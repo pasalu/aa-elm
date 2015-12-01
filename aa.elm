@@ -10,12 +10,13 @@ module Aa where
 import Graphics.Element exposing (..)
 import Graphics.Collage exposing (..)
 import Text
-import Color exposing (black, white, yellow)
+import Color exposing (black, white, yellow, red)
 import Signal exposing ((<~), (~))
 import Time exposing (Time, fps, inSeconds)
 import Keyboard
 import Window
 import List
+import Array exposing (Array)
 import Debug
 
 --Inputs to the game.
@@ -54,12 +55,13 @@ type alias Dart =
   Object { radius : Float
          , isFired : Bool
          , collidedWithBoard : Bool
+         , collidedWithOtherDart : Bool
          }
 
 type alias Darts = List Dart
 
 type alias Player =
-  Object { darts : Darts, isShooting : Bool, dartToBeFired : Int }
+  Object { darts : Darts, isShooting : Bool, indexOfDartToBeFired : Int }
 
 type State = LoadLevel | Play | Pause
 
@@ -97,6 +99,7 @@ defaultDart =
   , radius = 10
   , isFired = False
   , collidedWithBoard = False
+  , collidedWithOtherDart = False
   }
 
 defaultPlayer : Player
@@ -108,9 +111,9 @@ defaultPlayer =
   , angle = 0
   , angularVelocity = 0
   , direction = defaultBoard.direction
-  , darts = List.repeat 10 defaultDart
+  , darts = List.repeat 15 defaultDart
   , isShooting = False
-  , dartToBeFired = -1
+  , indexOfDartToBeFired = -1
   }
 
 defaultGame : Game
@@ -142,48 +145,86 @@ collidedWithBoard dart board =
   --dart.y > (board.y - (board.radius + (dart.height / 2) + dart.radius))
   dart.y >= board.collisionY
 
+unsafeGet : Int -> Array a -> a
+unsafeGet index array =
+  case Array.get index array of
+    Just item ->
+      item
+    Nothing ->
+      Debug.crash "Unknown Index"
+
 stepPlayer : Time -> Board -> Bool -> Player -> Player
 stepPlayer delta board space player =
-  let dartToBeFired' =
+  let indexOfDartToBeFired' =
         if space || player.isShooting then
-          let dartToBeFired =
+          let indexOfDartToBeFired =
                 if space then
-                  player.dartToBeFired + 1
+                  player.indexOfDartToBeFired + 1
                 else
-                  player.dartToBeFired
+                  player.indexOfDartToBeFired
           in
-             dartToBeFired
+             indexOfDartToBeFired
         else
-          player.dartToBeFired
+          player.indexOfDartToBeFired
 
-      setIsFired = (\index dart ->
-                      if index == dartToBeFired' then
-                        {dart | isFired <- True}
-                      else
-                        dart
-                   )
+      dartsArray =
+        Array.fromList player.darts
+          |> Array.map (\dart -> stepDart delta dart board)
+      dartsArray' =
+        if (space || player.isShooting)
+           && indexOfDartToBeFired' > defaultPlayer.indexOfDartToBeFired
+           && indexOfDartToBeFired' < Array.length dartsArray then
+          let dartToBeFired = unsafeGet indexOfDartToBeFired' dartsArray
+              dartsArrayWithFired =
+                Array.set
+                  indexOfDartToBeFired'
+                  {dartToBeFired | isFired <- True}
+                  dartsArray
+          in
+            collidedWithOtherDarts dartToBeFired dartsArrayWithFired
+        else
+          dartsArray
+      darts' = Array.toList dartsArray'
 
-      darts' =
-        List.indexedMap setIsFired player.darts
-          |> List.map (\dart -> stepDart delta dart board)
-
+      --aif = Debug.watch "Any In Flight" (anyInFlight darts' board)
       isShooting' = space || anyInFlight darts' board
   in
     { player |
                darts <- darts'
              , isShooting <- isShooting'
-             , dartToBeFired <- dartToBeFired'
+             , indexOfDartToBeFired <- indexOfDartToBeFired'
     }
+
+dartsInFlight : Darts -> Board -> Darts
+dartsInFlight darts board =
+  let check dart = not dart.collidedWithBoard && dart.y > defaultDart.y
+  in
+    List.filter check darts
 
 anyInFlight : Darts -> Board -> Bool
 anyInFlight darts board =
-  let check =
-        (\dart -> not dart.collidedWithBoard && dart.y > defaultDart.y)
-      collided =
-        List.map check darts
-          |> List.any ((==) True)
+  dartsInFlight darts board
+    |> List.length
+    |> (/=) 0
+
+collidedWithOtherDarts : Dart -> Array Dart -> Array Dart
+collidedWithOtherDarts dart darts =
+  let collided aDart =
+    let dartDistance = distance aDart.x aDart.y dart.x dart.y
+        ddl = Debug.log "Dart Distance" dartDistance
+    in
+      if aDart.collidedWithBoard
+         && aDart /= dart
+         && dartDistance <= dart.radius * 2 then
+        {aDart | collidedWithOtherDart <- True}
+      else
+        aDart
   in
-     collided
+    Array.map collided darts
+
+distance : Float -> Float -> Float -> Float -> Float
+distance x1 y1 x2 y2 =
+  sqrt <| ((x2 - x1) ^ 2) + ((y2 - y1) ^ 2)
 
 stepDart : Time -> Dart -> Board -> Dart
 stepDart delta dart board =
@@ -220,10 +261,10 @@ initialBoardDarts n =
   let delta = (2 * pi) / toFloat n --360 degrees divided by n.
       nDeltas = List.repeat n delta
       angles = List.scanl (+) 0 nDeltas
-      updateAngle =
-        (\dart angle -> {dart | angle <- angle
-                              , collidedWithBoard <- True
-                        })
+      updateAngle dart angle =
+        {dart | angle <- angle
+              , collidedWithBoard <- True
+        }
       defaultDarts = List.repeat n defaultDart
   in
     List.map2 updateAngle defaultDarts angles
@@ -237,9 +278,8 @@ loadLevel game =
   let player' =
     {defaultPlayer |
                      darts <-  initialBoardDarts 5 ++ defaultPlayer.darts
-                   , dartToBeFired <- 4
+                   , indexOfDartToBeFired <- 4
     }
-      w = Debug.log "Darts" player'.darts
   in
   {game |
           player <- player'
@@ -270,7 +310,7 @@ stepGame input game =
 
     board' = stepBoard delta board
     player' = stepPlayer delta board' spacePressed player
-    w = Debug.watch "Darts" player'.darts
+    w = Debug.watch "Darts" (List.filter .collidedWithOtherDart player'.darts)
   in
      {game |
              state <- state'
@@ -316,8 +356,10 @@ dartColor = black
 
 drawDart : Dart -> Form
 drawDart dart =
+  let drawDartColor = if dart.collidedWithOtherDart then red else dartColor
+  in
   circle dart.radius
-    |> filled dartColor
+    |> filled drawDartColor
 
 drawLine : Dart -> Form
 drawLine dart =
