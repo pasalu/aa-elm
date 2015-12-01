@@ -429,8 +429,8 @@ Elm.Aa.make = function (_elm) {
                                  _v5._1)
                                  ,displayBoard(_v6.board)]),
                     A2($Basics._op["++"],
-                    dartForms,
-                    lineForms))));
+                    lineForms,
+                    dartForms))));
                  }();}
             _U.badCase($moduleName,
             "between lines 375 and 389");

@@ -385,8 +385,8 @@ display (width, height) {state, board, player} =
       <| [ displayBackground width height
          , displayBoard board
          ]
-         ++ dartForms
          ++ lineForms
+         ++ dartForms
 
 main : Signal Element
 main = display <~ Window.dimensions ~ gameState
