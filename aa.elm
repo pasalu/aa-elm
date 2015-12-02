@@ -59,6 +59,7 @@ type alias Dart =
          , isFired : Bool
          , collidedWithBoard : Bool
          , collidedWithOtherDart : Bool
+         , collidedSpeed : Float
          }
 
 type alias Darts = List Dart
@@ -103,6 +104,7 @@ defaultDart =
   , isFired = False
   , collidedWithBoard = False
   , collidedWithOtherDart = False
+  , collidedSpeed = 0
   }
 
 defaultPlayer : Player
@@ -237,7 +239,7 @@ stepDart delta dart board =
         else
           dart.collidedWithBoard
 
-      angle' = dart.angle + if collidedWithBoard' then 0.05 else 0
+      angle' = dart.angle + if collidedWithBoard' then dart.collidedSpeed else 0
 
       (x', y') =
         if dart.collidedWithBoard then
@@ -280,10 +282,13 @@ loadLevel game =
   let level = unsafeGet game.level Level.levels
       initialNumberOfDarts = level.initialNumberOfDarts
       dartsToWin = level.dartsToWin
+      speed = level.speed
 
       indexOfDartToBeFired' = initialNumberOfDarts - 1
       darts' = initialBoardDarts initialNumberOfDarts
-                 ++ List.repeat dartsToWin defaultDart
+                 ++ List.repeat
+                      dartsToWin
+                      {defaultDart | collidedSpeed <- speed}
 
       player' =
         {defaultPlayer |

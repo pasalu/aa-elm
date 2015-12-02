@@ -105,7 +105,7 @@ Elm.Aa.make = function (_elm) {
             case "Nothing":
             return $Debug.crash("Unknown Index");}
          _U.badCase($moduleName,
-         "between lines 153 and 157");
+         "between lines 155 and 159");
       }();
    });
    var collidedWithBoard = F2(function (dart,
@@ -129,7 +129,7 @@ Elm.Aa.make = function (_elm) {
          var collidedWithBoard$ = $Basics.not(dart.collidedWithBoard) ? A2(collidedWithBoard,
          dart,
          board) : dart.collidedWithBoard;
-         var angle$ = dart.angle + (collidedWithBoard$ ? 5.0e-2 : 0);
+         var angle$ = dart.angle + (collidedWithBoard$ ? dart.collidedSpeed : 0);
          var $ = dart.collidedWithBoard ? {ctor: "_Tuple2"
                                           ,_0: board.x + 2 * board.radius * $Basics.cos(angle$)
                                           ,_1: board.y + 2 * board.radius * $Basics.sin(angle$)} : {ctor: "_Tuple2"
@@ -197,6 +197,7 @@ Elm.Aa.make = function (_elm) {
    var defaultDart = {_: {}
                      ,angle: 3 * $Basics.pi / 2
                      ,angularVelocity: 0
+                     ,collidedSpeed: 0
                      ,collidedWithBoard: false
                      ,collidedWithOtherDart: false
                      ,direction: Right
@@ -327,11 +328,14 @@ Elm.Aa.make = function (_elm) {
          var initialNumberOfDarts = level.initialNumberOfDarts;
          var indexOfDartToBeFired$ = initialNumberOfDarts - 1;
          var dartsToWin = level.dartsToWin;
+         var speed = level.speed;
          var darts$ = A2($Basics._op["++"],
          initialBoardDarts(initialNumberOfDarts),
          A2($List.repeat,
          dartsToWin,
-         defaultDart));
+         _U.replace([["collidedSpeed"
+                     ,speed]],
+         defaultDart)));
          var player$ = _U.replace([["darts"
                                    ,darts$]
                                   ,["indexOfDartToBeFired"
@@ -440,7 +444,7 @@ Elm.Aa.make = function (_elm) {
                     _L.fromArray([displayBoard(_v6.board)]))))));
                  }();}
             _U.badCase($moduleName,
-            "between lines 383 and 396");
+            "between lines 388 and 401");
          }();
       }();
    });
