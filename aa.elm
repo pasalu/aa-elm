@@ -326,11 +326,9 @@ displayBackground : Int -> Int -> Form
 displayBackground width height =
   filled white (rect (toFloat width) (toFloat height))
 
---TODO: Remove angle parameter.
-displayObject : Float -> Float -> Float -> Form -> Form
-displayObject x y angle form =
+displayObject : Float -> Float -> Form -> Form
+displayObject x y form =
   move (x, y) form
-    |> rotate angle
 
 drawBoard : Board -> Form
 drawBoard board =
@@ -348,7 +346,7 @@ drawBoard board =
 --Draw the board grouping darts that have collided with the board to the board.
 displayBoard : Board -> Form
 displayBoard board =
-  displayObject board.x board.y board.angle <| drawBoard board
+  displayObject board.x board.y <| drawBoard board
 
 dartColor : Color.Color
 dartColor = black
@@ -366,7 +364,7 @@ drawLine dart =
     |> traced (solid dartColor)
 
 displayDart : Dart -> Form
-displayDart dart = displayObject dart.x dart.y 0 (drawDart dart)
+displayDart dart = displayObject dart.x dart.y (drawDart dart)
 
 --TODO: Remove unused state parameter.
 display : (Int, Int) -> Game -> Element

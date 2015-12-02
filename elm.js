@@ -35,25 +35,22 @@ Elm.Aa.make = function (_elm) {
       return $Graphics$Collage.group(_L.fromArray([$Graphics$Collage.filled($Color.black)($Graphics$Collage.circle(board.radius))
                                                   ,$Graphics$Collage.text($Text.height(40)($Text.color($Color.white)($Text.fromString($Basics.toString(board.numberOfDarts)))))]));
    };
-   var displayObject = F4(function (x,
+   var displayObject = F3(function (x,
    y,
-   angle,
    form) {
-      return $Graphics$Collage.rotate(angle)(A2($Graphics$Collage.move,
+      return A2($Graphics$Collage.move,
       {ctor: "_Tuple2",_0: x,_1: y},
-      form));
+      form);
    });
    var displayBoard = function (board) {
-      return A3(displayObject,
+      return A2(displayObject,
       board.x,
-      board.y,
-      board.angle)(drawBoard(board));
+      board.y)(drawBoard(board));
    };
    var displayDart = function (dart) {
-      return A4(displayObject,
+      return A3(displayObject,
       dart.x,
       dart.y,
-      0,
       drawDart(dart));
    };
    var displayBackground = F2(function (width,
@@ -434,7 +431,7 @@ Elm.Aa.make = function (_elm) {
                     _L.fromArray([displayBoard(_v6.board)]))))));
                  }();}
             _U.badCase($moduleName,
-            "between lines 374 and 387");
+            "between lines 372 and 385");
          }();
       }();
    });
