@@ -269,9 +269,7 @@ Elm.Aa.make = function (_elm) {
    var defaultPlayer = {_: {}
                        ,angle: 0
                        ,angularVelocity: 0
-                       ,darts: A2($List.repeat,
-                       15,
-                       defaultDart)
+                       ,darts: _L.fromArray([])
                        ,direction: defaultBoard.direction
                        ,indexOfDartToBeFired: -1
                        ,isShooting: false
@@ -328,9 +326,12 @@ Elm.Aa.make = function (_elm) {
          $Level.levels);
          var initialNumberOfDarts = level.initialNumberOfDarts;
          var indexOfDartToBeFired$ = initialNumberOfDarts - 1;
+         var dartsToWin = level.dartsToWin;
          var darts$ = A2($Basics._op["++"],
          initialBoardDarts(initialNumberOfDarts),
-         defaultPlayer.darts);
+         A2($List.repeat,
+         dartsToWin,
+         defaultDart));
          var player$ = _U.replace([["darts"
                                    ,darts$]
                                   ,["indexOfDartToBeFired"
@@ -439,7 +440,7 @@ Elm.Aa.make = function (_elm) {
                     _L.fromArray([displayBoard(_v6.board)]))))));
                  }();}
             _U.badCase($moduleName,
-            "between lines 379 and 392");
+            "between lines 383 and 396");
          }();
       }();
    });

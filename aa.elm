@@ -114,7 +114,7 @@ defaultPlayer =
   , angle = 0
   , angularVelocity = 0
   , direction = defaultBoard.direction
-  , darts = List.repeat 15 defaultDart
+  , darts = []
   , isShooting = False
   , indexOfDartToBeFired = -1
   }
@@ -279,8 +279,12 @@ loadLevel : Game -> Game
 loadLevel game =
   let level = unsafeGet game.level Level.levels
       initialNumberOfDarts = level.initialNumberOfDarts
+      dartsToWin = level.dartsToWin
+
       indexOfDartToBeFired' = initialNumberOfDarts - 1
-      darts' = initialBoardDarts initialNumberOfDarts ++ defaultPlayer.darts
+      darts' = initialBoardDarts initialNumberOfDarts
+                 ++ List.repeat dartsToWin defaultDart
+
       player' =
         {defaultPlayer |
                          darts <- darts'
