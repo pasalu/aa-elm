@@ -31,8 +31,8 @@ Elm.Aa.make = function (_elm) {
       }();
    };
    var drawBoard = function (board) {
-      return $Graphics$Collage.group(_L.fromArray([$Graphics$Collage.text($Text.height(40)($Text.color($Color.white)($Text.fromString($Basics.toString(board.numberOfDarts)))))
-                                                  ,$Graphics$Collage.filled($Color.black)($Graphics$Collage.circle(board.radius))]));
+      return $Graphics$Collage.group(_L.fromArray([$Graphics$Collage.filled($Color.black)($Graphics$Collage.circle(board.radius))
+                                                  ,$Graphics$Collage.text($Text.height(40)($Text.color($Color.white)($Text.fromString($Basics.toString(board.numberOfDarts)))))]));
    };
    var displayObject = F4(function (x,
    y,
@@ -422,17 +422,18 @@ Elm.Aa.make = function (_elm) {
                     _v5._1,
                     $Graphics$Element.middle)(A2($Graphics$Collage.collage,
                     _v5._0,
-                    _v5._1)(A2($Basics._op["++"],
-                    _L.fromArray([A2(displayBackground,
-                                 _v5._0,
-                                 _v5._1)
-                                 ,displayBoard(_v6.board)]),
+                    _v5._1)(A2($List._op["::"],
+                    A2(displayBackground,
+                    _v5._0,
+                    _v5._1),
                     A2($Basics._op["++"],
                     lineForms,
-                    dartForms))));
+                    A2($Basics._op["++"],
+                    dartForms,
+                    _L.fromArray([displayBoard(_v6.board)]))))));
                  }();}
             _U.badCase($moduleName,
-            "between lines 375 and 389");
+            "between lines 374 and 387");
          }();
       }();
    });

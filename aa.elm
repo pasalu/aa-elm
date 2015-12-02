@@ -186,7 +186,6 @@ stepPlayer delta board space player =
           dartsArray
       darts' = Array.toList dartsArray'
 
-      --aif = Debug.watch "Any In Flight" (anyInFlight darts' board)
       isShooting' = space || anyInFlight darts' board
   in
     { player |
@@ -337,13 +336,13 @@ drawBoard : Board -> Form
 drawBoard board =
   group
     [
-      (text
+      (filled black <| circle board.radius)
+    , (text
         <| Text.height 40
         <| Text.color white
         <| Text.fromString
         <| toString board.numberOfDarts
       )
-    , (filled black <| circle board.radius)
     ]
 
 --Draw the board grouping darts that have collided with the board to the board.
@@ -382,11 +381,10 @@ display (width, height) {state, board, player} =
   in
   container width height middle
     <| collage width height
-      <| [ displayBackground width height
-         , displayBoard board
-         ]
-         ++ lineForms
+      <| displayBackground width height
+         :: lineForms
          ++ dartForms
+         ++ [ displayBoard board ]
 
 main : Signal Element
 main = display <~ Window.dimensions ~ gameState
