@@ -17,6 +17,7 @@ Elm.Aa.make = function (_elm) {
    $Graphics$Collage = Elm.Graphics.Collage.make(_elm),
    $Graphics$Element = Elm.Graphics.Element.make(_elm),
    $Keyboard = Elm.Keyboard.make(_elm),
+   $Level = Elm.Level.make(_elm),
    $List = Elm.List.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
    $Result = Elm.Result.make(_elm),
@@ -104,7 +105,7 @@ Elm.Aa.make = function (_elm) {
             case "Nothing":
             return $Debug.crash("Unknown Index");}
          _U.badCase($moduleName,
-         "between lines 150 and 154");
+         "between lines 153 and 157");
       }();
    });
    var collidedWithBoard = F2(function (dart,
@@ -128,7 +129,7 @@ Elm.Aa.make = function (_elm) {
          var collidedWithBoard$ = $Basics.not(dart.collidedWithBoard) ? A2(collidedWithBoard,
          dart,
          board) : dart.collidedWithBoard;
-         var angle$ = dart.angle + (collidedWithBoard$ ? 0.1 : 0);
+         var angle$ = dart.angle + (collidedWithBoard$ ? 5.0e-2 : 0);
          var $ = dart.collidedWithBoard ? {ctor: "_Tuple2"
                                           ,_0: board.x + 2 * board.radius * $Basics.cos(angle$)
                                           ,_1: board.y + 2 * board.radius * $Basics.sin(angle$)} : {ctor: "_Tuple2"
@@ -322,11 +323,18 @@ Elm.Aa.make = function (_elm) {
    });
    var loadLevel = function (game) {
       return function () {
+         var level = A2(unsafeGet,
+         game.level,
+         $Level.levels);
+         var initialNumberOfDarts = level.initialNumberOfDarts;
+         var indexOfDartToBeFired$ = initialNumberOfDarts - 1;
+         var darts$ = A2($Basics._op["++"],
+         initialBoardDarts(initialNumberOfDarts),
+         defaultPlayer.darts);
          var player$ = _U.replace([["darts"
-                                   ,A2($Basics._op["++"],
-                                   initialBoardDarts(5),
-                                   defaultPlayer.darts)]
-                                  ,["indexOfDartToBeFired",4]],
+                                   ,darts$]
+                                  ,["indexOfDartToBeFired"
+                                   ,indexOfDartToBeFired$]],
          defaultPlayer);
          return _U.replace([["player"
                             ,player$]],
@@ -387,7 +395,7 @@ Elm.Aa.make = function (_elm) {
    });
    var defaultGame = {_: {}
                      ,board: defaultBoard
-                     ,level: 1
+                     ,level: 0
                      ,player: defaultPlayer
                      ,spaceCount: 0
                      ,state: LoadLevel};
@@ -431,7 +439,7 @@ Elm.Aa.make = function (_elm) {
                     _L.fromArray([displayBoard(_v6.board)]))))));
                  }();}
             _U.badCase($moduleName,
-            "between lines 372 and 385");
+            "between lines 379 and 392");
          }();
       }();
    });
@@ -3355,6 +3363,48 @@ Elm.Keyboard.make = function (_elm) {
                           ,keysDown: keysDown
                           ,presses: presses};
    return _elm.Keyboard.values;
+};
+Elm.Level = Elm.Level || {};
+Elm.Level.make = function (_elm) {
+   "use strict";
+   _elm.Level = _elm.Level || {};
+   if (_elm.Level.values)
+   return _elm.Level.values;
+   var _op = {},
+   _N = Elm.Native,
+   _U = _N.Utils.make(_elm),
+   _L = _N.List.make(_elm),
+   $moduleName = "Level",
+   $Array = Elm.Array.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var levels = $Array.fromList(_L.fromArray([{_: {}
+                                              ,dartsToWin: 3
+                                              ,initialNumberOfDarts: 0
+                                              ,speed: 1.0e-2}
+                                             ,{_: {}
+                                              ,dartsToWin: 3
+                                              ,initialNumberOfDarts: 2
+                                              ,speed: 3.0e-2}
+                                             ,{_: {}
+                                              ,dartsToWin: 5
+                                              ,initialNumberOfDarts: 5
+                                              ,speed: 5.0e-2}]));
+   var Level = F3(function (a,
+   b,
+   c) {
+      return {_: {}
+             ,dartsToWin: c
+             ,initialNumberOfDarts: b
+             ,speed: a};
+   });
+   _elm.Level.values = {_op: _op
+                       ,Level: Level
+                       ,levels: levels};
+   return _elm.Level.values;
 };
 Elm.List = Elm.List || {};
 Elm.List.make = function (_elm) {

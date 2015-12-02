@@ -19,6 +19,9 @@ import List
 import Array exposing (Array)
 import Debug
 
+import Level
+
+
 --Inputs to the game.
 type alias Input =
   { space : Bool
@@ -122,7 +125,7 @@ defaultGame =
   , player = defaultPlayer
   , board = defaultBoard
   , spaceCount = 0
-  , level = 1
+  , level = 0
   }
 
 --Update the game.
@@ -234,7 +237,7 @@ stepDart delta dart board =
         else
           dart.collidedWithBoard
 
-      angle' = dart.angle + if collidedWithBoard' then 0.1 else 0
+      angle' = dart.angle + if collidedWithBoard' then 0.05 else 0
 
       (x', y') =
         if dart.collidedWithBoard then
@@ -274,15 +277,19 @@ stepBoard delta board =
 
 loadLevel : Game -> Game
 loadLevel game =
-  let player' =
-    {defaultPlayer |
-                     darts <-  initialBoardDarts 5 ++ defaultPlayer.darts
-                   , indexOfDartToBeFired <- 4
-    }
+  let level = unsafeGet game.level Level.levels
+      initialNumberOfDarts = level.initialNumberOfDarts
+      indexOfDartToBeFired' = initialNumberOfDarts - 1
+      darts' = initialBoardDarts initialNumberOfDarts ++ defaultPlayer.darts
+      player' =
+        {defaultPlayer |
+                         darts <- darts'
+                       , indexOfDartToBeFired <- indexOfDartToBeFired'
+        }
   in
-  {game |
-          player <- player'
-  }
+    {game |
+            player <- player'
+    }
 
 stepGame : Input -> Game -> Game
 stepGame input game =
