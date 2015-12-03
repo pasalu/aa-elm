@@ -443,7 +443,7 @@ Elm.Aa.make = function (_elm) {
                     _L.fromArray([displayBoard(_v6.board)]))))));
                  }();}
             _U.badCase($moduleName,
-            "between lines 388 and 401");
+            "between lines 387 and 400");
          }();
       }();
    });

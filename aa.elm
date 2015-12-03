@@ -382,9 +382,8 @@ drawLine dart =
 displayDart : Dart -> Form
 displayDart dart = displayObject dart.x dart.y (drawDart dart)
 
---TODO: Remove unused state parameter.
 display : (Int, Int) -> Game -> Element
-display (width, height) {state, board, player} =
+display (width, height) {board, player} =
   let dartForms = List.map displayDart player.darts
 
       --Lines for the darts drawn separately so they wont move when the darts
