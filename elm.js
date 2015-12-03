@@ -3412,11 +3412,39 @@ Elm.Level.make = function (_elm) {
                                              ,{_: {}
                                               ,dartsToWin: 3
                                               ,initialNumberOfDarts: 2
+                                              ,speed: 1.0e-2}
+                                             ,{_: {}
+                                              ,dartsToWin: 3
+                                              ,initialNumberOfDarts: 2
+                                              ,speed: -1.0e-2}
+                                             ,{_: {}
+                                              ,dartsToWin: 5
+                                              ,initialNumberOfDarts: 3
+                                              ,speed: 3.0e-2}
+                                             ,{_: {}
+                                              ,dartsToWin: 5
+                                              ,initialNumberOfDarts: 4
                                               ,speed: -3.0e-2}
                                              ,{_: {}
                                               ,dartsToWin: 5
                                               ,initialNumberOfDarts: 5
-                                              ,speed: 5.0e-2}]));
+                                              ,speed: 1.0e-2}
+                                             ,{_: {}
+                                              ,dartsToWin: 5
+                                              ,initialNumberOfDarts: 5
+                                              ,speed: -3.0e-2}
+                                             ,{_: {}
+                                              ,dartsToWin: 2
+                                              ,initialNumberOfDarts: 7
+                                              ,speed: 1.0e-2}
+                                             ,{_: {}
+                                              ,dartsToWin: 2
+                                              ,initialNumberOfDarts: 7
+                                              ,speed: -3.0e-2}
+                                             ,{_: {}
+                                              ,dartsToWin: 5
+                                              ,initialNumberOfDarts: 5
+                                              ,speed: 0.1}]));
    var Level = F3(function (a,
    b,
    c) {
