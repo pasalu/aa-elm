@@ -366,16 +366,7 @@ displayObject x y form =
 
 drawBoard : Board -> Form
 drawBoard board =
-  group
-    [
-      (filled black <| circle board.radius)
-    , (text
-        <| Text.height 40
-        <| Text.color white
-        <| Text.fromString
-        <| toString board.numberOfDarts
-      )
-    ]
+  filled black <| circle board.radius
 
 --Draw the board grouping darts that have collided with the board to the board.
 displayBoard : Board -> Form

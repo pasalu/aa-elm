@@ -21,7 +21,6 @@ Elm.Aa.make = function (_elm) {
    $Maybe = Elm.Maybe.make(_elm),
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm),
-   $Text = Elm.Text.make(_elm),
    $Time = Elm.Time.make(_elm),
    $Window = Elm.Window.make(_elm);
    var dartColor = $Color.black;
@@ -32,8 +31,7 @@ Elm.Aa.make = function (_elm) {
       }();
    };
    var drawBoard = function (board) {
-      return $Graphics$Collage.group(_L.fromArray([$Graphics$Collage.filled($Color.black)($Graphics$Collage.circle(board.radius))
-                                                  ,$Graphics$Collage.text($Text.height(40)($Text.color($Color.white)($Text.fromString($Basics.toString(board.numberOfDarts)))))]));
+      return $Graphics$Collage.filled($Color.black)($Graphics$Collage.circle(board.radius));
    };
    var displayObject = F3(function (x,
    y,
@@ -456,7 +454,7 @@ Elm.Aa.make = function (_elm) {
                     _L.fromArray([displayBoard(_v6.board)]))))));
                  }();}
             _U.badCase($moduleName,
-            "between lines 405 and 418");
+            "between lines 396 and 409");
          }();
       }();
    });
