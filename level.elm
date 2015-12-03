@@ -21,7 +21,7 @@ levels =
       , dartsToWin = 3
       }
       ,
-      { speed = 0.03
+      { speed = -0.03
       , initialNumberOfDarts = 2
       , dartsToWin = 3
       }

@@ -67,7 +67,7 @@ type alias Darts = List Dart
 type alias Player =
   Object { darts : Darts, isShooting : Bool, indexOfDartToBeFired : Int }
 
-type State = LoadLevel | Play | Pause
+type State = LoadLevelWin | LoadLevelLose | Play | Pause
 
 type alias Game =
   { state : State
@@ -123,7 +123,7 @@ defaultPlayer =
 
 defaultGame : Game
 defaultGame =
-  { state = LoadLevel
+  { state = LoadLevelLose
   , player = defaultPlayer
   , board = defaultBoard
   , spaceCount = 0
@@ -215,7 +215,6 @@ collidedWithOtherDarts : Dart -> Array Dart -> Array Dart
 collidedWithOtherDarts dart darts =
   let collided aDart =
     let dartDistance = distance aDart.x aDart.y dart.x dart.y
-        ddl = Debug.log "Dart Distance" dartDistance
     in
       if aDart.collidedWithBoard
          && aDart /= dart
@@ -260,14 +259,15 @@ stepDart delta dart board =
   in
      dart'
 
-initialBoardDarts : Int -> Darts
-initialBoardDarts n =
+initialBoardDarts : Int -> Float -> Darts
+initialBoardDarts n collidedSpeed =
   let delta = (2 * pi) / toFloat n --360 degrees divided by n.
       nDeltas = List.repeat n delta
       angles = List.scanl (+) 0 nDeltas
       updateAngle dart angle =
         {dart | angle <- angle
               , collidedWithBoard <- True
+              , collidedSpeed <- collidedSpeed
         }
       defaultDarts = List.repeat n defaultDart
   in
@@ -279,13 +279,19 @@ stepBoard delta board =
 
 loadLevel : Game -> Game
 loadLevel game =
-  let level = unsafeGet game.level Level.levels
+  let levelToLoad =
+        if game.state == LoadLevelWin then
+          game.level + 1
+        else
+          game.level
+      level = unsafeGet levelToLoad Level.levels
+
       initialNumberOfDarts = level.initialNumberOfDarts
       dartsToWin = level.dartsToWin
       speed = level.speed
 
       indexOfDartToBeFired' = initialNumberOfDarts - 1
-      darts' = initialBoardDarts initialNumberOfDarts
+      darts' = initialBoardDarts initialNumberOfDarts speed
                  ++ List.repeat
                       dartsToWin
                       {defaultDart | collidedSpeed <- speed}
@@ -298,6 +304,7 @@ loadLevel game =
   in
     {game |
             player <- player'
+          , level <- levelToLoad
     }
 
 stepGame : Input -> Game -> Game
@@ -305,12 +312,17 @@ stepGame input game =
   let
     {space, enter, delta} = input
 
-    game' = if game.state == LoadLevel then loadLevel game else game
+    game' =
+      if game.state == LoadLevelWin || game.state == LoadLevelLose then
+        loadLevel game
+      else
+        game
     {state, board, player, spaceCount} = game'
 
     state' =
       case state of
-        LoadLevel -> Play
+        LoadLevelWin -> Play
+        LoadLevelLose -> Play
         _ -> state
 
     --TODO: Move this into a function.
@@ -325,10 +337,16 @@ stepGame input game =
 
     board' = stepBoard delta board
     player' = stepPlayer delta board' spacePressed player
-    w = Debug.watch "Darts" (List.filter .collidedWithOtherDart player'.darts)
+    dartsNotOnBoard = List.filter (\dart -> not dart.collidedWithBoard) player'.darts
+    playerState =
+      if dartsNotOnBoard == [] then
+        LoadLevelWin
+      else
+        state'
+    w = Debug.watch "Game" game'
   in
-     {game |
-             state <- state'
+     {game' |
+              state <- playerState
            , player <- player'
            , board <- board'
            , spaceCount <- spaceCount'

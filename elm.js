@@ -79,9 +79,6 @@ Elm.Aa.make = function (_elm) {
                aDart.y,
                dart.x,
                dart.y);
-               var ddl = A2($Debug.log,
-               "Dart Distance",
-               dartDistance);
                return aDart.collidedWithBoard && (!_U.eq(aDart,
                dart) && _U.cmp(dartDistance,
                dart.radius * 2) < 1) ? _U.replace([["collidedWithOtherDart"
@@ -170,7 +167,8 @@ Elm.Aa.make = function (_elm) {
    });
    var Pause = {ctor: "Pause"};
    var Play = {ctor: "Play"};
-   var LoadLevel = {ctor: "LoadLevel"};
+   var LoadLevelLose = {ctor: "LoadLevelLose"};
+   var LoadLevelWin = {ctor: "LoadLevelWin"};
    var Object = F8(function (a,
    b,
    c,
@@ -227,7 +225,8 @@ Elm.Aa.make = function (_elm) {
       darts,
       board)));
    });
-   var initialBoardDarts = function (n) {
+   var initialBoardDarts = F2(function (n,
+   collidedSpeed) {
       return function () {
          var defaultDarts = A2($List.repeat,
          n,
@@ -236,7 +235,9 @@ Elm.Aa.make = function (_elm) {
          angle) {
             return _U.replace([["angle"
                                ,angle]
-                              ,["collidedWithBoard",true]],
+                              ,["collidedWithBoard",true]
+                              ,["collidedSpeed"
+                               ,collidedSpeed]],
             dart);
          });
          var delta = 2 * $Basics.pi / $Basics.toFloat(n);
@@ -254,7 +255,7 @@ Elm.Aa.make = function (_elm) {
          defaultDarts,
          angles);
       }();
-   };
+   });
    var Left = {ctor: "Left"};
    var defaultBoard = {_: {}
                       ,angle: 0
@@ -322,15 +323,19 @@ Elm.Aa.make = function (_elm) {
    });
    var loadLevel = function (game) {
       return function () {
+         var levelToLoad = _U.eq(game.state,
+         LoadLevelWin) ? game.level + 1 : game.level;
          var level = A2(unsafeGet,
-         game.level,
+         levelToLoad,
          $Level.levels);
          var initialNumberOfDarts = level.initialNumberOfDarts;
          var indexOfDartToBeFired$ = initialNumberOfDarts - 1;
          var dartsToWin = level.dartsToWin;
          var speed = level.speed;
          var darts$ = A2($Basics._op["++"],
-         initialBoardDarts(initialNumberOfDarts),
+         A2(initialBoardDarts,
+         initialNumberOfDarts,
+         speed),
          A2($List.repeat,
          dartsToWin,
          _U.replace([["collidedSpeed"
@@ -342,7 +347,8 @@ Elm.Aa.make = function (_elm) {
                                    ,indexOfDartToBeFired$]],
          defaultPlayer);
          return _U.replace([["player"
-                            ,player$]],
+                            ,player$]
+                           ,["level",levelToLoad]],
          game);
       }();
    };
@@ -350,7 +356,8 @@ Elm.Aa.make = function (_elm) {
    game) {
       return function () {
          var game$ = _U.eq(game.state,
-         LoadLevel) ? loadLevel(game) : game;
+         LoadLevelWin) || _U.eq(game.state,
+         LoadLevelLose) ? loadLevel(game) : game;
          var $ = game$,
          state = $.state,
          board = $.board,
@@ -358,9 +365,15 @@ Elm.Aa.make = function (_elm) {
          spaceCount = $.spaceCount;
          var state$ = function () {
             switch (state.ctor)
-            {case "LoadLevel": return Play;}
+            {case "LoadLevelLose":
+               return Play;
+               case "LoadLevelWin":
+               return Play;}
             return state;
          }();
+         var w = A2($Debug.watch,
+         "Game",
+         game$);
          var $ = input,
          space = $.space,
          enter = $.enter,
@@ -383,19 +396,19 @@ Elm.Aa.make = function (_elm) {
          board$,
          spacePressed,
          player);
-         var w = A2($Debug.watch,
-         "Darts",
-         A2($List.filter,
-         function (_) {
-            return _.collidedWithOtherDart;
+         var dartsNotOnBoard = A2($List.filter,
+         function (dart) {
+            return $Basics.not(dart.collidedWithBoard);
          },
-         player$.darts));
+         player$.darts);
+         var playerState = _U.eq(dartsNotOnBoard,
+         _L.fromArray([])) ? LoadLevelWin : state$;
          return _U.replace([["state"
-                            ,state$]
+                            ,playerState]
                            ,["player",player$]
                            ,["board",board$]
                            ,["spaceCount",spaceCount$]],
-         game);
+         game$);
       }();
    });
    var defaultGame = {_: {}
@@ -403,7 +416,7 @@ Elm.Aa.make = function (_elm) {
                      ,level: 0
                      ,player: defaultPlayer
                      ,spaceCount: 0
-                     ,state: LoadLevel};
+                     ,state: LoadLevelLose};
    var drawLine = function (dart) {
       return $Graphics$Collage.traced($Graphics$Collage.solid(dartColor))(A2($Graphics$Collage.segment,
       {ctor: "_Tuple2"
@@ -444,7 +457,7 @@ Elm.Aa.make = function (_elm) {
                     _L.fromArray([displayBoard(_v6.board)]))))));
                  }();}
             _U.badCase($moduleName,
-            "between lines 387 and 400");
+            "between lines 405 and 418");
          }();
       }();
    });
@@ -482,7 +495,8 @@ Elm.Aa.make = function (_elm) {
                     ,Left: Left
                     ,Right: Right
                     ,Object: Object
-                    ,LoadLevel: LoadLevel
+                    ,LoadLevelWin: LoadLevelWin
+                    ,LoadLevelLose: LoadLevelLose
                     ,Play: Play
                     ,Pause: Pause
                     ,Game: Game
@@ -3393,7 +3407,7 @@ Elm.Level.make = function (_elm) {
                                              ,{_: {}
                                               ,dartsToWin: 3
                                               ,initialNumberOfDarts: 2
-                                              ,speed: 3.0e-2}
+                                              ,speed: -3.0e-2}
                                              ,{_: {}
                                               ,dartsToWin: 5
                                               ,initialNumberOfDarts: 5
