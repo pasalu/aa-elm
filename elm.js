@@ -369,9 +369,6 @@ Elm.Aa.make = function (_elm) {
                return Play;}
             return state;
          }();
-         var w = A2($Debug.watch,
-         "Game",
-         game$);
          var $ = input,
          space = $.space,
          enter = $.enter,
@@ -394,13 +391,23 @@ Elm.Aa.make = function (_elm) {
          board$,
          spacePressed,
          player);
+         var darts = player$.darts;
          var dartsNotOnBoard = A2($List.filter,
          function (dart) {
             return $Basics.not(dart.collidedWithBoard);
          },
-         player$.darts);
-         var playerState = _U.eq(dartsNotOnBoard,
+         darts);
+         var dartsCollidedWithOtherDart = A2($List.filter,
+         function (_) {
+            return _.collidedWithOtherDart;
+         },
+         darts);
+         var playerState = !_U.eq(dartsCollidedWithOtherDart,
+         _L.fromArray([])) ? LoadLevelLose : _U.eq(dartsNotOnBoard,
          _L.fromArray([])) ? LoadLevelWin : state$;
+         var dc = A2($Debug.watch,
+         "Collided",
+         dartsCollidedWithOtherDart);
          return _U.replace([["state"
                             ,playerState]
                            ,["player",player$]
@@ -455,7 +462,7 @@ Elm.Aa.make = function (_elm) {
                     _L.fromArray([displayBoard(_v6.board)]))))));
                  }();}
             _U.badCase($moduleName,
-            "between lines 396 and 409");
+            "between lines 403 and 416");
          }();
       }();
    });

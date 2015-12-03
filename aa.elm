@@ -337,13 +337,20 @@ stepGame input game =
 
     board' = stepBoard delta board
     player' = stepPlayer delta board' spacePressed player
-    dartsNotOnBoard = List.filter (\dart -> not dart.collidedWithBoard) player'.darts
+    darts = player'.darts
+
+    dartsNotOnBoard = List.filter (\dart -> not dart.collidedWithBoard) darts
+    dartsCollidedWithOtherDart = List.filter .collidedWithOtherDart darts
+
     playerState =
-      if dartsNotOnBoard == [] then
+      if dartsCollidedWithOtherDart /= [] then
+        LoadLevelLose
+      else if dartsNotOnBoard == [] then
         LoadLevelWin
       else
         state'
-    w = Debug.watch "Game" game'
+    dc = Debug.watch "Collided" dartsCollidedWithOtherDart
+    --w = Debug.watch "Game" game'
   in
      {game' |
               state <- playerState
