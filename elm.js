@@ -60,6 +60,17 @@ Elm.Aa.make = function (_elm) {
       $Basics.toFloat(width),
       $Basics.toFloat(height)));
    });
+   var stepSpace = F2(function (space,
+   spaceCount) {
+      return space ? _U.eq(spaceCount,
+      0) ? {ctor: "_Tuple2"
+           ,_0: space
+           ,_1: spaceCount + 1} : {ctor: "_Tuple2"
+                                  ,_0: false
+                                  ,_1: spaceCount + 1} : {ctor: "_Tuple2"
+                                                         ,_0: space
+                                                         ,_1: 0};
+   });
    var distance = F4(function (x1,
    y1,
    x2,
@@ -100,7 +111,7 @@ Elm.Aa.make = function (_elm) {
             case "Nothing":
             return $Debug.crash("Unknown Index");}
          _U.badCase($moduleName,
-         "between lines 147 and 151");
+         "between lines 146 and 150");
       }();
    });
    var collidedWithBoard = F2(function (dart,
@@ -372,14 +383,9 @@ Elm.Aa.make = function (_elm) {
          var $ = input,
          space = $.space,
          delta = $.delta;
-         var $ = space ? _U.eq(spaceCount,
-         0) ? {ctor: "_Tuple2"
-              ,_0: space
-              ,_1: spaceCount + 1} : {ctor: "_Tuple2"
-                                     ,_0: false
-                                     ,_1: spaceCount + 1} : {ctor: "_Tuple2"
-                                                            ,_0: space
-                                                            ,_1: 0},
+         var $ = A2(stepSpace,
+         space,
+         spaceCount),
          spacePressed = $._0,
          spaceCount$ = $._1;
          var board$ = A2(stepBoard,
@@ -461,7 +467,7 @@ Elm.Aa.make = function (_elm) {
                     _L.fromArray([displayBoard(_v6.board)]))))));
                  }();}
             _U.badCase($moduleName,
-            "between lines 395 and 408");
+            "between lines 400 and 413");
          }();
       }();
    });
@@ -515,6 +521,7 @@ Elm.Aa.make = function (_elm) {
                     ,initialBoardDarts: initialBoardDarts
                     ,stepBoard: stepBoard
                     ,loadLevel: loadLevel
+                    ,stepSpace: stepSpace
                     ,stepGame: stepGame
                     ,gameState: gameState
                     ,displayBackground: displayBackground

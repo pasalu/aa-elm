@@ -139,7 +139,6 @@ stepObject delta ({x, y, vx, vy, angle, angularVelocity, direction} as object) =
 
 collidedWithBoard : Dart -> Board -> Bool
 collidedWithBoard dart board =
-  --dart.y > (board.y - (board.radius + (dart.height / 2) + dart.radius))
   dart.y >= board.collisionY
 
 unsafeGet : Int -> Array a -> a
@@ -299,6 +298,21 @@ loadLevel game =
           , level <- levelToLoad
     }
 
+{-
+ - Only one dart should be fired when space is pressed. Signal.dropRepeats
+ - won't work since the input record contains delta which will cause it to
+ - assume every input is new.
+ -}
+stepSpace : Bool -> Int -> (Bool, Int)
+stepSpace space spaceCount =
+      if space then
+         if spaceCount == 0 then
+            (space, spaceCount + 1)
+         else
+            (False, spaceCount + 1)
+      else
+        (space, 0)
+
 stepGame : Input -> Game -> Game
 stepGame input game =
   let
@@ -317,15 +331,7 @@ stepGame input game =
         LoadLevelLose -> Play
         _ -> state
 
-    --TODO: Move this into a function.
-    (spacePressed, spaceCount') =
-      if space then
-         if spaceCount == 0 then
-            (space, spaceCount + 1)
-         else
-            (False, spaceCount + 1)
-      else
-        (space, 0)
+    (spacePressed, spaceCount') = stepSpace space spaceCount
 
     board' = stepBoard delta board
     player' = stepPlayer delta board' spacePressed player
@@ -342,7 +348,6 @@ stepGame input game =
       else
         state'
     dc = Debug.watch "Collided" dartsCollidedWithOtherDart
-    --w = Debug.watch "Game" game'
   in
      {game' |
               state <- playerState
