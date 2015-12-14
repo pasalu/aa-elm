@@ -133,13 +133,6 @@ defaultGame =
 --Update the game.
 stepObject : Time -> Object a -> Object a
 stepObject delta ({x, y, vx, vy, angle, angularVelocity, direction} as object) =
-{-
-  let angle' = if direction == Left then
-                 angle + angularVelocity * delta
-               else
-                 angle - angularVelocity * delta
-  in
-     -}
   { object |
       x <- x + vx * delta
     , y <- y + vy * delta
@@ -402,7 +395,7 @@ display : (Int, Int) -> Game -> Element
 display (width, height) {board, player} =
   let dartForms = List.map displayDart player.darts
 
-      --Lines for the darts drawn separately so they wont move when the darts
+      --Lines for the darts drawn separately so they won't move when the darts
       --are relocated.
       lineForms =
         List.filter .collidedWithBoard player.darts

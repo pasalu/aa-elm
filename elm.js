@@ -100,7 +100,7 @@ Elm.Aa.make = function (_elm) {
             case "Nothing":
             return $Debug.crash("Unknown Index");}
          _U.badCase($moduleName,
-         "between lines 155 and 159");
+         "between lines 148 and 152");
       }();
    });
    var collidedWithBoard = F2(function (dart,
@@ -462,7 +462,7 @@ Elm.Aa.make = function (_elm) {
                     _L.fromArray([displayBoard(_v6.board)]))))));
                  }();}
             _U.badCase($moduleName,
-            "between lines 403 and 416");
+            "between lines 396 and 409");
          }();
       }();
    });
