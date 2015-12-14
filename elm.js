@@ -100,7 +100,7 @@ Elm.Aa.make = function (_elm) {
             case "Nothing":
             return $Debug.crash("Unknown Index");}
          _U.badCase($moduleName,
-         "between lines 148 and 152");
+         "between lines 147 and 151");
       }();
    });
    var collidedWithBoard = F2(function (dart,
@@ -371,7 +371,6 @@ Elm.Aa.make = function (_elm) {
          }();
          var $ = input,
          space = $.space,
-         enter = $.enter,
          delta = $.delta;
          var $ = space ? _U.eq(spaceCount,
          0) ? {ctor: "_Tuple2"
@@ -462,27 +461,22 @@ Elm.Aa.make = function (_elm) {
                     _L.fromArray([displayBoard(_v6.board)]))))));
                  }();}
             _U.badCase($moduleName,
-            "between lines 396 and 409");
+            "between lines 395 and 408");
          }();
       }();
    });
    var delta = A2($Signal._op["<~"],
    $Time.inSeconds,
    $Time.fps(60));
-   var Input = F3(function (a,
-   b,
-   c) {
+   var Input = F2(function (a,b) {
       return {_: {}
-             ,delta: c
-             ,enter: b
+             ,delta: b
              ,space: a};
    });
    var input = $Signal.sampleOn(delta)(A2($Signal._op["~"],
-   A2($Signal._op["~"],
    A2($Signal._op["<~"],
    Input,
    $Keyboard.space),
-   $Keyboard.enter),
    delta));
    var gameState = A3($Signal.foldp,
    stepGame,

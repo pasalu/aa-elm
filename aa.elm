@@ -25,7 +25,6 @@ import Level
 --Inputs to the game.
 type alias Input =
   { space : Bool
-  , enter : Bool
   , delta : Time
   }
 
@@ -35,7 +34,7 @@ delta = inSeconds <~ (fps 60)
 input : Signal Input
 input =
   Signal.sampleOn delta
-    <| Input <~ Keyboard.space ~ Keyboard.enter ~ delta
+    <| Input <~ Keyboard.space ~ delta
 
 --Models of the game.
 type Direction = Left | Right
@@ -303,7 +302,7 @@ loadLevel game =
 stepGame : Input -> Game -> Game
 stepGame input game =
   let
-    {space, enter, delta} = input
+    {space, delta} = input
 
     game' =
       if game.state == LoadLevelWin || game.state == LoadLevelLose then
