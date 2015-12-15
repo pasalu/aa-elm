@@ -86,7 +86,7 @@ defaultBoard =
   , angularVelocity = 5
   , direction = Left
   , radius = 100
-  , numberOfDarts = 10
+  , numberOfDarts = 0
   , collisionY = -85
   }
 
@@ -292,9 +292,12 @@ loadLevel game =
                          darts <- darts'
                        , indexOfDartToBeFired <- indexOfDartToBeFired'
         }
+      board' =
+        {defaultBoard | numberOfDarts <- dartsToWin}
   in
     {game |
             player <- player'
+          , board <- board'
           , level <- levelToLoad
     }
 
@@ -347,13 +350,12 @@ stepGame input game =
         LoadLevelWin
       else
         state'
-    dc = Debug.watch "Collided" dartsCollidedWithOtherDart
   in
      {game' |
               state <- playerState
-           , player <- player'
-           , board <- board'
-           , spaceCount <- spaceCount'
+            , player <- player'
+            , board <- board'
+            , spaceCount <- spaceCount'
      }
 
 gameState : Signal Game
@@ -370,9 +372,18 @@ displayObject x y form =
 
 drawBoard : Board -> Form
 drawBoard board =
-  filled black <| circle board.radius
+  group
+    [
+      circle board.radius
+        |> filled black
+      ,
+      toString board.numberOfDarts
+        |> Text.fromString
+        |> Text.color white
+        |> Text.height 40
+        |> text
+    ]
 
---Draw the board grouping darts that have collided with the board to the board.
 displayBoard : Board -> Form
 displayBoard board =
   displayObject board.x board.y <| drawBoard board

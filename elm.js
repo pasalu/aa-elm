@@ -22,6 +22,7 @@ Elm.Aa.make = function (_elm) {
    $Maybe = Elm.Maybe.make(_elm),
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm),
+   $Text = Elm.Text.make(_elm),
    $Time = Elm.Time.make(_elm),
    $Window = Elm.Window.make(_elm);
    var dartColor = $Color.black;
@@ -32,7 +33,8 @@ Elm.Aa.make = function (_elm) {
       }();
    };
    var drawBoard = function (board) {
-      return $Graphics$Collage.filled($Color.black)($Graphics$Collage.circle(board.radius));
+      return $Graphics$Collage.group(_L.fromArray([$Graphics$Collage.filled($Color.black)($Graphics$Collage.circle(board.radius))
+                                                  ,$Graphics$Collage.text($Text.height(40)($Text.color($Color.white)($Text.fromString($Basics.toString(board.numberOfDarts)))))]));
    };
    var displayObject = F3(function (x,
    y,
@@ -271,7 +273,7 @@ Elm.Aa.make = function (_elm) {
                       ,angularVelocity: 5
                       ,collisionY: -85
                       ,direction: Left
-                      ,numberOfDarts: 10
+                      ,numberOfDarts: 0
                       ,radius: 100
                       ,vx: 0
                       ,vy: 0
@@ -330,6 +332,12 @@ Elm.Aa.make = function (_elm) {
          player);
       }();
    });
+   var defaultGame = {_: {}
+                     ,board: defaultBoard
+                     ,level: 0
+                     ,player: defaultPlayer
+                     ,spaceCount: 0
+                     ,state: LoadLevelLose};
    var loadLevel = function (game) {
       return function () {
          var levelToLoad = _U.eq(game.state,
@@ -340,6 +348,9 @@ Elm.Aa.make = function (_elm) {
          var initialNumberOfDarts = level.initialNumberOfDarts;
          var indexOfDartToBeFired$ = initialNumberOfDarts - 1;
          var dartsToWin = level.dartsToWin;
+         var board$ = _U.replace([["numberOfDarts"
+                                  ,dartsToWin]],
+         defaultBoard);
          var speed = level.speed;
          var darts$ = A2($Basics._op["++"],
          A2(initialBoardDarts,
@@ -357,6 +368,7 @@ Elm.Aa.make = function (_elm) {
          defaultPlayer);
          return _U.replace([["player"
                             ,player$]
+                           ,["board",board$]
                            ,["level",levelToLoad]],
          game);
       }();
@@ -410,9 +422,6 @@ Elm.Aa.make = function (_elm) {
          var playerState = !_U.eq(dartsCollidedWithOtherDart,
          _L.fromArray([])) ? LoadLevelLose : _U.eq(dartsNotOnBoard,
          _L.fromArray([])) ? LoadLevelWin : state$;
-         var dc = A2($Debug.watch,
-         "Collided",
-         dartsCollidedWithOtherDart);
          return _U.replace([["state"
                             ,playerState]
                            ,["player",player$]
@@ -421,12 +430,6 @@ Elm.Aa.make = function (_elm) {
          game$);
       }();
    });
-   var defaultGame = {_: {}
-                     ,board: defaultBoard
-                     ,level: 0
-                     ,player: defaultPlayer
-                     ,spaceCount: 0
-                     ,state: LoadLevelLose};
    var drawLine = function (dart) {
       return $Graphics$Collage.traced($Graphics$Collage.solid(dartColor))(A2($Graphics$Collage.segment,
       {ctor: "_Tuple2"
@@ -467,7 +470,7 @@ Elm.Aa.make = function (_elm) {
                     _L.fromArray([displayBoard(_v6.board)]))))));
                  }();}
             _U.badCase($moduleName,
-            "between lines 400 and 413");
+            "between lines 411 and 424");
          }();
       }();
    });
